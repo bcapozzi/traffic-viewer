@@ -1,0 +1,9 @@
+{ "jobs": [
+  { "task" : "turn burgers" ,
+    "who" : "Anni" ,
+    "place" : "Quick"}
+  , 
+  { "task" : "wash dishes" ,
+    "who" : "Bob" ,
+    "place" : "McDonalds"}
+]}
