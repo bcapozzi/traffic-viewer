@@ -12745,7 +12745,7 @@ Elm.Main.make = function (_elm) {
          }
    });
    var toDisplayCount = function (c) {
-      return $Basics.toString($Basics.toFloat(c) / 3.0 * 100.0);
+      return $Basics.toString($Basics.toFloat(0 - c) / 3.0 * 100.0);
    };
    var toDisplayTime = function (t) {
       return $Basics.toString(0 - t);

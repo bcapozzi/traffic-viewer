@@ -120,7 +120,7 @@ toDisplayTime t =
   (toString -t)
 
 toDisplayCount c =
-  (toString ((toFloat c)/3.0*100.0))
+  (toString ((toFloat -c)/3.0*100.0))
 
 toXYPointString : ResourceCount -> String
 toXYPointString resourceCount = 
