@@ -58,11 +58,12 @@ createLabelForResourceCount resourceCount =
   Svg.text' [x "-400", y "-80"][text resourceCount.id]
 
 createCountSvg resourceCount = 
-      Svg.svg [ width "400", height "200", viewBox "0 0 400 200"]
+      Svg.svg [ width "400", height "200", viewBox "0 0 400 200", style "margin-left:auto; margin-right:auto; display:block;"]
       [g [ transform ("translate(400, 100)")]
       (List.append [(Svg.rect [x "-400", y "-100", width "400", height "200", style "fill:#FFFFFF;stroke:#222222"][])] (List.append [(createLabelForResourceCount resourceCount),(createSparkLineForResourceCount resourceCount)]  createTicks))
       ]
 
+{-
 combine tc1 tc2 =
   Array.fromList [tc1, { t = tc2.t,
     count = tc1.count}]
@@ -77,6 +78,7 @@ getValue maybeValue =
 createStep counts =
   combine (getValue (Array.get 0 counts)) (getValue (Array.get 1 counts))
 
+
 stairs resourceCount =
   Array.toList (toStairs Array.empty (Array.fromList resourceCount.counts))
 
@@ -85,6 +87,27 @@ toStairs sofar counts =
       Array.append sofar (Array.slice 0 2 counts)
     else
       toStairs (Array.append sofar (createStep counts)) (Array.slice 1 10 counts)
+
+-}
+-- alternate implementation of stairs function
+combine prev next =
+  {t = next.t,
+   count = prev.count}
+   
+steps tc =
+  List.map2 combine (List.take ((List.length tc)-1) tc) (List.drop 1 tc)
+  
+stairs resourceCount =
+  interleave (steps resourceCount.counts) resourceCount.counts
+
+interleave : List a -> List a -> List a
+interleave list1 list2 = 
+  case list1 of
+    []      -> list2
+    headA :: tailA -> 
+      case list2 of
+        []      -> list1
+        headB :: tailB -> headB :: headA :: interleave tailA tailB
 
 --  
 toSvgs maybeResourceCounts =
@@ -99,9 +122,8 @@ view address model =
     (List.append 
     [ button [ onClick address GetResources ] [ text "Click to get resources!" ]
     , button [ onClick address GetResourceCounts ] [ text "Click to get resource counts!" ]
-    , viewResources model.resources
+    , br [][]
     , displayResources model.resources
-    , displayResourceCounts model.resourceCounts
     , viewResourceCounts model.resourceCounts
     ] (List.intersperse (br [][]) (toSvgs model.resourceCounts)))
 
@@ -109,9 +131,9 @@ view address model =
 
 getTickHeight x =
   if ((x%60) == 0) then
-    "10"
+    "4"
   else 
-    "5"
+    "2"
 
 createTicks = 
   List.map (\x -> Svg.line [x1 (toString x), x2 (toString x), y1 ("-" ++ (getTickHeight x)), y2 (getTickHeight x), stroke "black"][]) (List.reverse(List.map (\n -> (-n*15)) [0..24]))
@@ -120,7 +142,7 @@ toDisplayTime t =
   (toString -t)
 
 toDisplayCount c =
-  (toString ((toFloat -c)/3.0*100.0))
+  (toString ((toFloat -c)/4.0*100.0))
 
 toXYPointString : ResourceCount -> String
 toXYPointString resourceCount = 
@@ -151,10 +173,6 @@ displayResourceCounts maybeResourceCounts =
       [g [ transform ("translate(360, 100)")]
       ((Svg.text' [x "-360", y "20"][text "resource"]) ::
       ((createSparkLineForResource (List.head resourceCounts)) :: createTicks))
---(Svg.line [x1 "-200", x2 "0", y1 "40", y2 "20", stroke "black"][]) :: createTicks)
---(createSparkLineForResource (List.head resourceCounts)) :: 
---       (Svg.rect [x "-360", y "-100", width "360", height "200", style "fill:#33FF33;"][] :: createTicks))
-       
       ]
  
 
@@ -215,13 +233,7 @@ toSvgTextList maybeResource =
                                 ]
                               []) resource.coords
  
---text ((toString c.x) ++ "," ++ (toString c.y)) ]) resource.coords
-
---toSvgTextList coordStringList =
---    List.map (\c -> Svg.text' [] [ text c ]) coordStringList
-
 -- convert single resource coords to SVG polygon
--- polygon [ fill "#60B5CC", points "323.298,143.724 323.298,0 179.573,0" ] []
 
 toPointString resource =
   String.concat(List.map (\c -> (toDisplayX c.x) ++ "," ++ (toDisplayY c.y) ++ " ") resource.coords)
@@ -253,13 +265,11 @@ toSvgPolygonsOrNothing maybeResources =
       (toSvgPolygons resources)
 
 displayResources maybeResources = 
-  Svg.svg [ width "200", height "200", viewBox "0 0 200 200", fill "#333333" ]
+  Svg.svg [ width "200", height "200", viewBox "0 0 200 200", fill "#333333", style "margin-left:auto; margin-right:auto; display:block;" ]
     [g [ transform ("translate(100, 100)") ]
-    (toSvgPolygonsOrNothing maybeResources)
+    ((Svg.rect [x "-100", y "-100", width "200", height "200", style "fill:#FFFFFF;stroke:#222222"][]) ::
+    (toSvgPolygonsOrNothing maybeResources))
     ]
---    ((Svg.rect [x "-100", y "-100", width "200", height "200", style "fill:#FF3333;"][]) :: (List.concat(toSvgShapes maybeResources)))
---(toSvgTextList (getNth 2 maybeResources)))
-
 
 viewCoords coords = 
   List.map (\c -> toString c.x) coords
