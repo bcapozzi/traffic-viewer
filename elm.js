@@ -12755,27 +12755,9 @@ Elm.Main.make = function (_elm) {
    var toDisplayCount = function (c) {
       return $Basics.toString($Basics.toFloat(0 - c) / 4.0 * 100.0);
    };
-   var toDisplayTime = function (t) {
-      return $Basics.toString(0 - t);
-   };
    var getTickHeight = function (x) {
       return _U.eq(A2($Basics._op["%"],x,60),0) ? "4" : "2";
    };
-   var createTicks = A2($List.map,
-   function (x) {
-      return A2($Svg.line,
-      _U.list([$Svg$Attributes.x1($Basics.toString(x))
-              ,$Svg$Attributes.x2($Basics.toString(x))
-              ,$Svg$Attributes.y1(A2($Basics._op["++"],"-",getTickHeight(x)))
-              ,$Svg$Attributes.y2(getTickHeight(x))
-              ,$Svg$Attributes.stroke("black")]),
-      _U.list([]));
-   },
-   $List.reverse(A2($List.map,
-   function (n) {
-      return (0 - n) * 15;
-   },
-   _U.range(0,24))));
    var interleave = F2(function (list1,list2) {
       var _p8 = list1;
       if (_p8.ctor === "[]") {
@@ -12805,6 +12787,60 @@ Elm.Main.make = function (_elm) {
       steps(resourceCount.counts),
       resourceCount.counts);
    };
+   var init = {ctor: "_Tuple2"
+              ,_0: {resources: $Maybe.Nothing,resourceCounts: $Maybe.Nothing}
+              ,_1: $Effects.none};
+   var Model = F2(function (a,b) {
+      return {resources: a,resourceCounts: b};
+   });
+   var ShowResourceCounts = function (a) {
+      return {ctor: "ShowResourceCounts",_0: a};
+   };
+   var ShowResources = function (a) {
+      return {ctor: "ShowResources",_0: a};
+   };
+   var GetResourceCounts = {ctor: "GetResourceCounts"};
+   var GetResources = {ctor: "GetResources"};
+   var NoOp = {ctor: "NoOp"};
+   var getDisplayTimeOrigin = 200;
+   var createLabelForResourceCount = function (resourceCount) {
+      return A2($Svg.text$,
+      _U.list([$Svg$Attributes.x($Basics.toString(getDisplayTimeOrigin - 400))
+              ,$Svg$Attributes.y("-80")]),
+      _U.list([$Html.text(resourceCount.id)]));
+   };
+   var getTimeOrigin = 0;
+   var toDisplayTime = function (t) {
+      return $Basics.toString(t - getTimeOrigin);
+   };
+   var createTickLabels = A2($List.map,
+   function (n) {
+      return A2($Svg.text$,
+      _U.list([$Svg$Attributes.x(toDisplayTime(n))
+              ,$Svg$Attributes.y("20")
+              ,$Svg$Attributes.fill("gray")
+              ,$Svg$Attributes.textAnchor("middle")
+              ,$Svg$Attributes.alignmentBaseline("middle")]),
+      _U.list([$Html.text($Basics.toString(n))]));
+   },
+   _U.list([0,60,120,180]));
+   var createTicks = A2($List.append,
+   A2($List.map,
+   function (x) {
+      return A2($Svg.line,
+      _U.list([$Svg$Attributes.x1($Basics.toString(x))
+              ,$Svg$Attributes.x2($Basics.toString(x))
+              ,$Svg$Attributes.y1(A2($Basics._op["++"],"-",getTickHeight(x)))
+              ,$Svg$Attributes.y2(getTickHeight(x))
+              ,$Svg$Attributes.stroke("gray")]),
+      _U.list([]));
+   },
+   $List.reverse(A2($List.map,
+   function (n) {
+      return (0 - n) * 15;
+   },
+   _U.range(-12,12)))),
+   createTickLabels);
    var toXYPointString = function (resourceCount) {
       return $String.concat(A2($List.map,
       function (p) {
@@ -12834,49 +12870,12 @@ Elm.Main.make = function (_elm) {
             _U.list([]));
          }
    };
-   var displayResourceCounts = function (maybeResourceCounts) {
-      var _p11 = maybeResourceCounts;
-      if (_p11.ctor === "Nothing") {
-            return A2($Svg.svg,
-            _U.list([$Svg$Attributes.width("400")
-                    ,$Svg$Attributes.height("200")
-                    ,$Svg$Attributes.viewBox("0 0 400 200")]),
-            _U.list([A2($Svg.g,
-            _U.list([$Svg$Attributes.transform("translate(400, 100)")]),
-            _U.list([A2($Svg.rect,
-            _U.list([$Svg$Attributes.x("-400")
-                    ,$Svg$Attributes.y("-100")
-                    ,$Svg$Attributes.width("400")
-                    ,$Svg$Attributes.height("200")
-                    ,$Svg$Attributes.style("fill:#FF3333;")]),
-            _U.list([]))]))]));
-         } else {
-            return A2($Svg.svg,
-            _U.list([$Svg$Attributes.width("360")
-                    ,$Svg$Attributes.height("200")
-                    ,$Svg$Attributes.viewBox("0 0 360 200")]),
-            _U.list([A2($Svg.g,
-            _U.list([$Svg$Attributes.transform("translate(360, 100)")]),
-            A2($List._op["::"],
-            A2($Svg.text$,
-            _U.list([$Svg$Attributes.x("-360"),$Svg$Attributes.y("20")]),
-            _U.list([$Html.text("resource")])),
-            A2($List._op["::"],
-            createSparkLineForResource($List.head(_p11._0)),
-            createTicks)))]));
-         }
-   };
    var createSparkLineForResourceCount = function (resourceCount) {
       return A2($Svg.polyline,
       _U.list([$Svg$Attributes.points(toXYPointString(resourceCount))
               ,$Svg$Attributes.stroke("blue")
               ,$Svg$Attributes.fill("none")]),
       _U.list([]));
-   };
-   var createLabelForResourceCount = function (resourceCount) {
-      return A2($Svg.text$,
-      _U.list([$Svg$Attributes.x("-400"),$Svg$Attributes.y("-80")]),
-      _U.list([$Html.text(resourceCount.id)]));
    };
    var createCountSvg = function (resourceCount) {
       return A2($Svg.svg,
@@ -12885,10 +12884,16 @@ Elm.Main.make = function (_elm) {
               ,$Svg$Attributes.viewBox("0 0 400 200")
               ,$Svg$Attributes.style("margin-left:auto; margin-right:auto; display:block;")]),
       _U.list([A2($Svg.g,
-      _U.list([$Svg$Attributes.transform("translate(400, 100)")]),
+      _U.list([$Svg$Attributes.transform(A2($Basics._op["++"],
+      "translate(",
+      A2($Basics._op["++"],
+      $Basics.toString(getDisplayTimeOrigin),
+      ", 100)")))]),
       A2($List.append,
       _U.list([A2($Svg.rect,
-      _U.list([$Svg$Attributes.x("-400")
+      _U.list([$Svg$Attributes.x(A2($Basics._op["++"],
+              "-",
+              $Basics.toString(getDisplayTimeOrigin)))
               ,$Svg$Attributes.y("-100")
               ,$Svg$Attributes.width("400")
               ,$Svg$Attributes.height("200")
@@ -12900,31 +12905,17 @@ Elm.Main.make = function (_elm) {
       createTicks)))]));
    };
    var toSvgs = function (maybeResourceCounts) {
-      var _p12 = maybeResourceCounts;
-      if (_p12.ctor === "Nothing") {
+      var _p11 = maybeResourceCounts;
+      if (_p11.ctor === "Nothing") {
             return _U.list([]);
          } else {
             return A2($List.map,
             function (r) {
                return createCountSvg(r);
             },
-            _p12._0);
+            _p11._0);
          }
    };
-   var init = {ctor: "_Tuple2"
-              ,_0: {resources: $Maybe.Nothing,resourceCounts: $Maybe.Nothing}
-              ,_1: $Effects.none};
-   var Model = F2(function (a,b) {
-      return {resources: a,resourceCounts: b};
-   });
-   var ShowResourceCounts = function (a) {
-      return {ctor: "ShowResourceCounts",_0: a};
-   };
-   var ShowResources = function (a) {
-      return {ctor: "ShowResources",_0: a};
-   };
-   var GetResourceCounts = {ctor: "GetResourceCounts"};
-   var GetResources = {ctor: "GetResources"};
    var view = F2(function (address,model) {
       return A2($Html.div,
       _U.list([]),
@@ -12942,7 +12933,6 @@ Elm.Main.make = function (_elm) {
       A2($Html.br,_U.list([]),_U.list([])),
       toSvgs(model.resourceCounts))));
    });
-   var NoOp = {ctor: "NoOp"};
    var resourceCountsUrl = "./resource-counts.json";
    var getResourceCounts = $Effects.task(A2($Task.map,
    ShowResourceCounts,
@@ -12954,8 +12944,8 @@ Elm.Main.make = function (_elm) {
    ShowResources,
    $Task.toMaybe(A2($Http.get,decoderColl,resourcesUrl))));
    var update = F2(function (action,model) {
-      var _p13 = action;
-      switch (_p13.ctor)
+      var _p12 = action;
+      switch (_p12.ctor)
       {case "NoOp": return {ctor: "_Tuple2"
                            ,_0: model
                            ,_1: $Effects.none};
@@ -12966,10 +12956,10 @@ Elm.Main.make = function (_elm) {
                                           ,_0: _U.update(model,{resourceCounts: $Maybe.Nothing})
                                           ,_1: getResourceCounts};
          case "ShowResources": return {ctor: "_Tuple2"
-                                      ,_0: _U.update(model,{resources: _p13._0})
+                                      ,_0: _U.update(model,{resources: _p12._0})
                                       ,_1: $Effects.none};
          default: return {ctor: "_Tuple2"
-                         ,_0: _U.update(model,{resourceCounts: _p13._0})
+                         ,_0: _U.update(model,{resourceCounts: _p12._0})
                          ,_1: $Effects.none};}
    });
    var app = $StartApp.start({init: init
@@ -12982,6 +12972,8 @@ Elm.Main.make = function (_elm) {
    return _elm.Main.values = {_op: _op
                              ,resourcesUrl: resourcesUrl
                              ,resourceCountsUrl: resourceCountsUrl
+                             ,getTimeOrigin: getTimeOrigin
+                             ,getDisplayTimeOrigin: getDisplayTimeOrigin
                              ,app: app
                              ,main: main
                              ,NoOp: NoOp
@@ -13002,12 +12994,12 @@ Elm.Main.make = function (_elm) {
                              ,view: view
                              ,getTickHeight: getTickHeight
                              ,createTicks: createTicks
+                             ,createTickLabels: createTickLabels
                              ,toDisplayTime: toDisplayTime
                              ,toDisplayCount: toDisplayCount
                              ,toXYPointString: toXYPointString
                              ,createSparkLineForResource: createSparkLineForResource
                              ,createSparkLineForResourceCount: createSparkLineForResourceCount
-                             ,displayResourceCounts: displayResourceCounts
                              ,getNth: getNth
                              ,toStringList: toStringList
                              ,toDisplayX: toDisplayX

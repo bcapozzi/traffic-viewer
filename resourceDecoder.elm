@@ -14,6 +14,12 @@ import Array
 resourcesUrl = "./resources.json"
 resourceCountsUrl = "./resource-counts.json"
 
+getTimeOrigin =
+  0
+
+getDisplayTimeOrigin = 
+  200
+
 -- StartApp plumbing
 app =
   StartApp.start { init = init, view = view, update = update, inputs = [] }
@@ -55,12 +61,12 @@ update action model =
       ({ model | resourceCounts = maybeResourceCounts }, Effects.none)
 
 createLabelForResourceCount resourceCount =
-  Svg.text' [x "-400", y "-80"][text resourceCount.id]
+  Svg.text' [x (toString (getDisplayTimeOrigin-400)), y "-80"][text resourceCount.id]
 
 createCountSvg resourceCount = 
       Svg.svg [ width "400", height "200", viewBox "0 0 400 200", style "margin-left:auto; margin-right:auto; display:block;"]
-      [g [ transform ("translate(400, 100)")]
-      (List.append [(Svg.rect [x "-400", y "-100", width "400", height "200", style "fill:#FFFFFF;stroke:#222222"][])] (List.append [(createLabelForResourceCount resourceCount),(createSparkLineForResourceCount resourceCount)]  createTicks))
+      [g [ transform (("translate(" ++ (toString getDisplayTimeOrigin) ++", 100)"))]
+      (List.append [(Svg.rect [x ("-" ++ (toString getDisplayTimeOrigin)), y "-100", width "400", height "200", style "fill:#FFFFFF;stroke:#222222"][])] (List.append [(createLabelForResourceCount resourceCount),(createSparkLineForResourceCount resourceCount)]  createTicks))
       ]
 
 {-
@@ -136,10 +142,13 @@ getTickHeight x =
     "2"
 
 createTicks = 
-  List.map (\x -> Svg.line [x1 (toString x), x2 (toString x), y1 ("-" ++ (getTickHeight x)), y2 (getTickHeight x), stroke "black"][]) (List.reverse(List.map (\n -> (-n*15)) [0..24]))
+  List.append (List.map (\x -> Svg.line [x1 (toString x), x2 (toString x), y1 ("-" ++ (getTickHeight x)), y2 (getTickHeight x), stroke "gray"][]) (List.reverse(List.map (\n -> (-n*15)) [-12..12]))) createTickLabels
+
+createTickLabels = 
+  (List.map (\n -> Svg.text' [x (toDisplayTime n), y "20", fill "gray", textAnchor "middle", alignmentBaseline "middle"][text (toString n)]) [0,60,120,180]) 
 
 toDisplayTime t = 
-  (toString -t)
+  (toString (t - getTimeOrigin))
 
 toDisplayCount c =
   (toString ((toFloat -c)/4.0*100.0))
@@ -153,28 +162,11 @@ createSparkLineForResource maybeResourceCount =
     Nothing ->
       Svg.line [x1 "-200", x2 "0", y1 "50", y2 "25", stroke "black"][]
     Just resourceCount ->
---      Svg.line [x1 "-200", x2 "0", y1 "-50", y2 "-25", stroke "black"][]
       polyline [points (toXYPointString resourceCount), stroke "blue", fill "none"][]
 
 
 createSparkLineForResourceCount resourceCount = 
   polyline [points (toXYPointString resourceCount), stroke "blue", fill "none"][]
-
-displayResourceCounts maybeResourceCounts =
-  case maybeResourceCounts of
-    Nothing ->
-    Svg.svg [ width "400", height "200", viewBox "0 0 400 200"]
-      [g [ transform ("translate(400, 100)")]
-      [Svg.rect [x "-400", y "-100", width "400", height "200", style "fill:#FF3333;"][]
-      ]
-    ]
-    Just resourceCounts ->
-     Svg.svg [ width "360", height "200", viewBox "0 0 360 200"]
-      [g [ transform ("translate(360, 100)")]
-      ((Svg.text' [x "-360", y "20"][text "resource"]) ::
-      ((createSparkLineForResource (List.head resourceCounts)) :: createTicks))
-      ]
- 
 
 getNth n maybeResources = 
   case maybeResources of
