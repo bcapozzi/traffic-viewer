@@ -12808,12 +12808,23 @@ Elm.ResourceDecoder.make = function (_elm) {
    var toWestLongitude = function (g) {
       return {latDeg: g.latDeg,lonDeg: 0 - g.lonDeg};
    };
-   var toXYPoint = F2(function (p1,p2) {
-      var _p8 = A2($GeoUtils.getEastNorthOffsetNmiBetween,p1,p2);
+   var getRefPoint = {latDeg: 33.637,lonDeg: 84.2567};
+   var toXYPoint = function (p) {
+      var refPoint = getRefPoint;
+      var _p8 = A2($GeoUtils.getEastNorthOffsetNmiBetween,
+      refPoint,
+      toWestLongitude(p));
       var deast = _p8._0;
       var dnorth = _p8._1;
       return {x: deast,y: dnorth};
-   });
+   };
+   var toXYPoints = function (coordList) {
+      return A2($List.map,
+      function (g) {
+         return toXYPoint(g);
+      },
+      coordList);
+   };
    var getMapDisplayHeight = 600;
    var getMapDisplayWidth = 600;
    var getMapDisplayViewBox = A2($Basics._op["++"],
@@ -12877,6 +12888,13 @@ Elm.ResourceDecoder.make = function (_elm) {
       0.8) > 0 ? "#0000FF" : _U.cmp($Basics.toFloat(count) / $Basics.toFloat(maxCount),
       0.5) > 0 ? "#FF00FF" : "#FFFFFF";
    });
+   var getAllXYPoints = function (resources) {
+      return $List.concat(A2($List.map,
+      function (r) {
+         return toXYPoints(r.coords);
+      },
+      resources));
+   };
    var getBoundValue = function (maybeValue) {
       var _p11 = maybeValue;
       if (_p11.ctor === "Nothing") {
@@ -12898,16 +12916,7 @@ Elm.ResourceDecoder.make = function (_elm) {
              ,_1: getBoundValue(maxX)};
    };
    var getXBounds = function (resources) {
-      var refPoint = {latDeg: 33.637,lonDeg: 84.2567};
-      var xypoints = $List.concat(A2($List.map,
-      function (r) {
-         return A2($List.map,
-         function (g) {
-            return A2(toXYPoint,refPoint,toWestLongitude(g));
-         },
-         r.coords);
-      },
-      resources));
+      var xypoints = getAllXYPoints(resources);
       return findXBounds(xypoints);
    };
    var findYBounds = function (xypoints) {
@@ -12923,16 +12932,7 @@ Elm.ResourceDecoder.make = function (_elm) {
              ,_1: getBoundValue(maxY)};
    };
    var getYBounds = function (resources) {
-      var refPoint = {latDeg: 33.637,lonDeg: 84.2567};
-      var xypoints = $List.concat(A2($List.map,
-      function (r) {
-         return A2($List.map,
-         function (g) {
-            return A2(toXYPoint,refPoint,toWestLongitude(g));
-         },
-         r.coords);
-      },
-      resources));
+      var xypoints = getAllXYPoints(resources);
       return findYBounds(xypoints);
    };
    var getYScaleFactor = F2(function (minY,maxY) {
@@ -12950,12 +12950,7 @@ Elm.ResourceDecoder.make = function (_elm) {
       return $Basics.toString(cx * A2(getXScaleFactor,minX,maxX));
    });
    var toPointString = F5(function (resource,minX,maxX,minY,maxY) {
-      var refPoint = {latDeg: 33.637,lonDeg: 84.2567};
-      var xypoints = A2($List.map,
-      function (g) {
-         return A2(toXYPoint,refPoint,toWestLongitude(g));
-      },
-      resource.coords);
+      var xypoints = toXYPoints(resource.coords);
       return $String.concat(A2($List.map,
       function (p) {
          return A2($Basics._op["++"],
@@ -12997,12 +12992,7 @@ Elm.ResourceDecoder.make = function (_elm) {
    minY,
    maxY,
    fillColorString) {
-      var refPoint = {latDeg: 33.637,lonDeg: 84.2567};
-      var xypoints = A2($List.map,
-      function (g) {
-         return A2(toXYPoint,refPoint,toWestLongitude(g));
-      },
-      resource.coords);
+      var xypoints = toXYPoints(resource.coords);
       var pointString = $String.concat(A2($List.map,
       function (p) {
          return A2($Basics._op["++"],
@@ -13022,16 +13012,7 @@ Elm.ResourceDecoder.make = function (_elm) {
    });
    var toSvgPolygonsColoredByCount = F2(function (resources,
    resourceCounts) {
-      var refPoint = {latDeg: 33.637,lonDeg: 84.2567};
-      var xypoints = $List.concat(A2($List.map,
-      function (r) {
-         return A2($List.map,
-         function (g) {
-            return A2(toXYPoint,refPoint,toWestLongitude(g));
-         },
-         r.coords);
-      },
-      resources));
+      var xypoints = getAllXYPoints(resources);
       var _p14 = findXBounds(xypoints);
       var minX = _p14._0;
       var maxX = _p14._1;
@@ -13096,12 +13077,7 @@ Elm.ResourceDecoder.make = function (_elm) {
       toSvgPolygonsOrNothing(model)))]));
    };
    var toPolyline = F5(function (route,minX,maxX,minY,maxY) {
-      var refPoint = {latDeg: 33.637,lonDeg: 84.2567};
-      var xypoints = A2($List.map,
-      function (g) {
-         return A2(toXYPoint,refPoint,toWestLongitude(g));
-      },
-      route.points);
+      var xypoints = toXYPoints(route.points);
       var pointString = $String.concat(A2($List.map,
       function (p) {
          return A2($Basics._op["++"],
@@ -13251,10 +13227,14 @@ Elm.ResourceDecoder.make = function (_elm) {
    var init = {ctor: "_Tuple2"
               ,_0: {resources: $Maybe.Nothing
                    ,resourceCounts: $Maybe.Nothing
-                   ,routes: $Maybe.Nothing}
+                   ,routes: $Maybe.Nothing
+                   ,currentTime: 0}
               ,_1: $Effects.none};
-   var Model = F3(function (a,b,c) {
-      return {resources: a,resourceCounts: b,routes: c};
+   var Model = F4(function (a,b,c,d) {
+      return {resources: a
+             ,resourceCounts: b
+             ,routes: c
+             ,currentTime: d};
    });
    var ShowRoutes = function (a) {
       return {ctor: "ShowRoutes",_0: a};
@@ -13497,6 +13477,7 @@ Elm.ResourceDecoder.make = function (_elm) {
                                         ,toSvgPolygon: toSvgPolygon
                                         ,toSvgPolygonColoredByCount: toSvgPolygonColoredByCount
                                         ,getBoundValue: getBoundValue
+                                        ,getAllXYPoints: getAllXYPoints
                                         ,getXBounds: getXBounds
                                         ,getYBounds: getYBounds
                                         ,toSvgPolygons: toSvgPolygons
@@ -13514,6 +13495,8 @@ Elm.ResourceDecoder.make = function (_elm) {
                                         ,getMapDisplayWidth: getMapDisplayWidth
                                         ,getMapDisplayHeight: getMapDisplayHeight
                                         ,getMapDisplayViewBox: getMapDisplayViewBox
+                                        ,getRefPoint: getRefPoint
+                                        ,toXYPoints: toXYPoints
                                         ,toXYPoint: toXYPoint
                                         ,toWestLongitude: toWestLongitude
                                         ,toPolyline: toPolyline

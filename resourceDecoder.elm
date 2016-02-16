@@ -48,12 +48,14 @@ type Action
 type alias Model =
   { resources : Maybe Resources
    ,resourceCounts : Maybe ResourceCounts
-   ,routes : Maybe Routes}
+   ,routes : Maybe Routes 
+   ,currentTime : Int}
 
 init =
   ({ resources = Nothing
     ,resourceCounts = Nothing
-    ,routes = Nothing }, Effects.none)
+    ,routes = Nothing
+    ,currentTime = 0}, Effects.none)
 
 update action model =
   case action of
@@ -216,8 +218,7 @@ toDisplayY cy minY maxY  =
 
 toPointString resource minX maxX minY maxY =
   let
-    refPoint = {latDeg=33.637, lonDeg=84.2567}
-    xypoints = List.map (\g -> toXYPoint refPoint (toWestLongitude g)) resource.coords 
+    xypoints = toXYPoints resource.coords
   in
     String.concat (List.map (\p -> ((toDisplayX p.x minX maxX) ++ "," ++ (toDisplayY p.y minY maxY) ++ " ")) xypoints)
 
@@ -226,8 +227,7 @@ toSvgPolygon resource minX maxX minY maxY =
 
 toSvgPolygonColoredByCount resource minX maxX minY maxY fillColorString =
   let
-    refPoint = {latDeg=33.637, lonDeg=84.2567}
-    xypoints = List.map (\g -> toXYPoint refPoint (toWestLongitude g)) resource.coords 
+    xypoints = toXYPoints resource.coords 
     pointString = String.concat (List.map (\p -> ((toDisplayX p.x minX maxX) ++ "," ++ (toDisplayY p.y minY maxY) ++ " ")) xypoints)
   in
     polygon [fillOpacity "0.4", style ("stroke:#FF0000; fill:" ++ fillColorString), points pointString] []
@@ -240,18 +240,19 @@ getBoundValue maybeValue =
     Just value ->
       value
 
+getAllXYPoints resources = 
+  List.concat (List.map (\r -> toXYPoints r.coords) resources)
+
 getXBounds resources = 
   let
-    refPoint = {latDeg=33.637, lonDeg=84.2567}
-    xypoints = List.concat (List.map (\r -> List.map (\g -> toXYPoint refPoint (toWestLongitude g)) r.coords) resources)
+    xypoints = getAllXYPoints resources
   in
     findXBounds xypoints
 
 
 getYBounds resources = 
   let
-    refPoint = {latDeg=33.637, lonDeg=84.2567}
-    xypoints = List.concat (List.map (\r -> List.map (\g -> toXYPoint refPoint (toWestLongitude g)) r.coords) resources)
+    xypoints = getAllXYPoints resources
   in
     findYBounds xypoints
 
@@ -320,8 +321,7 @@ findYBounds xypoints =
 
 toSvgPolygonsColoredByCount resources resourceCounts =
   let 
-    refPoint = {latDeg=33.637, lonDeg=84.2567}
-    xypoints = List.concat (List.map (\r -> List.map (\g -> toXYPoint refPoint (toWestLongitude g)) r.coords) resources)
+    xypoints = getAllXYPoints resources
     (minX,maxX) = findXBounds xypoints
     (minY,maxY) = findYBounds xypoints
   in
@@ -353,10 +353,17 @@ getMapDisplayHeight =
 getMapDisplayViewBox =
   "0 0 " ++ (toString getMapDisplayWidth) ++ " " ++ (toString getMapDisplayHeight)
 
+getRefPoint =
+  {latDeg=33.637, lonDeg=84.2567}
+
 -- leverage GeoUtils function
-toXYPoint p1 p2 =
+toXYPoints coordList =
+  List.map (\g -> toXYPoint g) coordList
+
+toXYPoint p =
   let 
-    (deast,dnorth) = getEastNorthOffsetNmiBetween p1 p2
+    refPoint = getRefPoint
+    (deast,dnorth) = getEastNorthOffsetNmiBetween refPoint (toWestLongitude p)
   in
     {x = deast,
      y = dnorth
@@ -369,8 +376,7 @@ toWestLongitude g =
 
 toPolyline route minX maxX minY maxY =
   let
-    refPoint = {latDeg=33.637, lonDeg=84.2567}
-    xypoints = List.map (\g -> toXYPoint refPoint (toWestLongitude g)) route.points 
+    xypoints = toXYPoints route.points 
     pointString = String.concat (List.map (\p -> ((toDisplayX p.x minX maxX) ++ "," ++ (toDisplayY p.y minY maxY) ++ " ")) xypoints)
   in
     polyline [points pointString, stroke "blue", fill "none"][]
