@@ -81,7 +81,9 @@ update action model =
       ({ model | currentTime = timeNow}, Effects.none)
  
 createLabelForResourceCount resourceCount =
-  Svg.text' [x (toString (getDisplayTimeOrigin-400)), y "-80"][text resourceCount.id]
+  Svg.text' [x (toString (getDisplayTimeOrigin-400))
+            ,y "-80"]
+            [text resourceCount.id]
 
 createBorder =
   (Svg.rect [x ("-" ++ (toString getDisplayTimeOrigin))
@@ -91,7 +93,11 @@ createBorder =
                    , style "fill:#FFFFFF;stroke:#222222"][])
 
 createCountSvg resourceCount refTime = 
-      Svg.svg [ width "400", height "200", viewBox "0 0 400 200", style "margin-left:auto; margin-right:auto; display:block;"]
+      Svg.svg [ width "400"
+              , height "200"
+              , viewBox "0 0 400 200"
+              , style "margin-left:auto; margin-right:auto; display:block;"
+              ]
       [g [ transform (("translate(" ++ (toString getDisplayTimeOrigin) ++", 100)"))]
       (List.append 
         [(createBorder)
@@ -101,32 +107,6 @@ createCountSvg resourceCount refTime =
         createTicks)
       ]
 
-{-
-combine tc1 tc2 =
-  Array.fromList [tc1, { t = tc2.t,
-    count = tc1.count}]
-    
-getValue maybeValue =
-  case maybeValue of
-    Nothing -> 
-      {t=0, count=0}
-    Just value ->
-      value
-      
-createStep counts =
-  combine (getValue (Array.get 0 counts)) (getValue (Array.get 1 counts))
-
-
-stairs resourceCount =
-  Array.toList (toStairs Array.empty (Array.fromList resourceCount.counts))
-
-toStairs sofar counts =
-    if (Array.length counts < 2) then
-      Array.append sofar (Array.slice 0 2 counts)
-    else
-      toStairs (Array.append sofar (createStep counts)) (Array.slice 1 10 counts)
-
--}
 -- alternate implementation of stairs function
 combine prev next =
   {t = next.t,
@@ -180,10 +160,21 @@ getTickHeight x =
     "2"
 
 createTicks = 
-  List.append (List.map (\x -> Svg.line [x1 (toString x), x2 (toString x), y1 ("-" ++ (getTickHeight x)), y2 (getTickHeight x), stroke "gray"][]) (List.reverse(List.map (\n -> (-n*15)) [-12..12]))) createTickLabels
+  List.append (List.map (\x -> Svg.line [ x1 (toString x)
+                                        , x2 (toString x)
+                                        , y1 ("-" ++ (getTickHeight x))
+                                        , y2 (getTickHeight x)
+                                        , stroke "gray"][]) 
+                                        (List.reverse(List.map (\n -> (-n*15)) [-12..12]))) createTickLabels
 
 createTickLabels = 
-  (List.map (\n -> Svg.text' [x (toDisplayTime n), y "20", fill "gray", textAnchor "middle", alignmentBaseline "middle"][text (toString n)]) [0,60,120,180]) 
+  (List.map (\n -> Svg.text' [ x (toDisplayTime n)
+                             , y "20"
+                             , fill "gray"
+                             , textAnchor "middle"
+                             , alignmentBaseline "middle"
+                             ]
+                             [text (toString n)]) [0,60,120,180]) 
 
 toDisplayTime t = 
   (toString (t - getTimeOrigin))
@@ -196,7 +187,11 @@ toDisplayCount c =
 
 toXYPointString : ResourceCount -> Int -> String
 toXYPointString resourceCount refTime = 
-  String.concat (List.map (\p -> ( (toRelativeDisplayTime p.t refTime) ++ "," ++ (toDisplayCount p.count) ++ " ")) (stairs resourceCount))
+  let 
+    stairsData = stairs resourceCount
+  in
+    String.concat (List.map (\p -> 
+      ( (toRelativeDisplayTime p.t refTime) ++ "," ++ (toDisplayCount p.count) ++ " ")) stairsData)
 
 createSparkLineForResource maybeResourceCount = 
   case maybeResourceCount of

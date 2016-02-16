@@ -13307,6 +13307,7 @@ Elm.ResourceDecoder.make = function (_elm) {
       return $Basics.toString(t - refTime - getTimeOrigin);
    });
    var toXYPointString = F2(function (resourceCount,refTime) {
+      var stairsData = stairs(resourceCount);
       return $String.concat(A2($List.map,
       function (p) {
          return A2($Basics._op["++"],
@@ -13315,7 +13316,7 @@ Elm.ResourceDecoder.make = function (_elm) {
          ",",
          A2($Basics._op["++"],toDisplayCount(p.count)," ")));
       },
-      stairs(resourceCount)));
+      stairsData));
    });
    var createSparkLineForResource = function (maybeResourceCount) {
       var _p31 = maybeResourceCount;
