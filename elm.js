@@ -13247,6 +13247,12 @@ Elm.ResourceDecoder.make = function (_elm) {
    };
    var GetResourceCounts = {ctor: "GetResourceCounts"};
    var GetResources = {ctor: "GetResources"};
+   var ShiftTimeBackward = function (a) {
+      return {ctor: "ShiftTimeBackward",_0: a};
+   };
+   var ShiftTimeForward = function (a) {
+      return {ctor: "ShiftTimeForward",_0: a};
+   };
    var GetRoutes = {ctor: "GetRoutes"};
    var NoOp = {ctor: "NoOp"};
    var getDisplayTimeOrigin = 200;
@@ -13288,17 +13294,20 @@ Elm.ResourceDecoder.make = function (_elm) {
    },
    _U.range(-12,12)))),
    createTickLabels);
-   var toXYPointString = function (resourceCount) {
+   var toRelativeDisplayTime = F2(function (t,refTime) {
+      return $Basics.toString(t - refTime - getTimeOrigin);
+   });
+   var toXYPointString = F2(function (resourceCount,refTime) {
       return $String.concat(A2($List.map,
       function (p) {
          return A2($Basics._op["++"],
-         toDisplayTime(p.t),
+         A2(toRelativeDisplayTime,p.t,refTime),
          A2($Basics._op["++"],
          ",",
          A2($Basics._op["++"],toDisplayCount(p.count)," ")));
       },
       stairs(resourceCount)));
-   };
+   });
    var createSparkLineForResource = function (maybeResourceCount) {
       var _p31 = maybeResourceCount;
       if (_p31.ctor === "Nothing") {
@@ -13311,20 +13320,23 @@ Elm.ResourceDecoder.make = function (_elm) {
             _U.list([]));
          } else {
             return A2($Svg.polyline,
-            _U.list([$Svg$Attributes.points(toXYPointString(_p31._0))
+            _U.list([$Svg$Attributes.points(A2(toXYPointString,_p31._0,0))
                     ,$Svg$Attributes.stroke("blue")
                     ,$Svg$Attributes.fill("none")]),
             _U.list([]));
          }
    };
-   var createSparkLineForResourceCount = function (resourceCount) {
+   var createSparkLineForResourceCount = F2(function (resourceCount,
+   refTime) {
       return A2($Svg.polyline,
-      _U.list([$Svg$Attributes.points(toXYPointString(resourceCount))
+      _U.list([$Svg$Attributes.points(A2(toXYPointString,
+              resourceCount,
+              refTime))
               ,$Svg$Attributes.stroke("blue")
               ,$Svg$Attributes.fill("none")]),
       _U.list([]));
-   };
-   var createCountSvg = function (resourceCount) {
+   });
+   var createCountSvg = F2(function (resourceCount,refTime) {
       return A2($Svg.svg,
       _U.list([$Svg$Attributes.width("400")
               ,$Svg$Attributes.height("200")
@@ -13348,21 +13360,21 @@ Elm.ResourceDecoder.make = function (_elm) {
       _U.list([]))]),
       A2($List.append,
       _U.list([createLabelForResourceCount(resourceCount)
-              ,createSparkLineForResourceCount(resourceCount)]),
+              ,A2(createSparkLineForResourceCount,resourceCount,refTime)]),
       createTicks)))]));
-   };
-   var toSvgs = function (maybeResourceCounts) {
+   });
+   var toSvgs = F2(function (maybeResourceCounts,refTime) {
       var _p32 = maybeResourceCounts;
       if (_p32.ctor === "Nothing") {
             return _U.list([]);
          } else {
             return A2($List.map,
             function (r) {
-               return createCountSvg(r);
+               return A2(createCountSvg,r,refTime);
             },
             _p32._0);
          }
-   };
+   });
    var view = F2(function (address,model) {
       return A2($Html.div,
       _U.list([]),
@@ -13380,10 +13392,20 @@ Elm.ResourceDecoder.make = function (_elm) {
               ,displayResources(model)
               ,displayRoutes(model)
               ,viewResourceCounts(model.resourceCounts)
-              ,viewRoutes(model.routes)]),
+              ,viewRoutes(model.routes)
+              ,A2($Html.button,
+              _U.list([A2($Html$Events.onClick,
+              address,
+              ShiftTimeForward(model.currentTime + 15))]),
+              _U.list([$Html.text("+15")]))
+              ,A2($Html.button,
+              _U.list([A2($Html$Events.onClick,
+              address,
+              ShiftTimeBackward(model.currentTime - 15))]),
+              _U.list([$Html.text("-15")]))]),
       A2($List.intersperse,
       A2($Html.br,_U.list([]),_U.list([])),
-      toSvgs(model.resourceCounts))));
+      A2(toSvgs,model.resourceCounts,model.currentTime))));
    });
    var routesUrl = "./routes1.json";
    var getRoutes = $Effects.task(A2($Task.map,
@@ -13422,8 +13444,14 @@ Elm.ResourceDecoder.make = function (_elm) {
          case "ShowResourceCounts": return {ctor: "_Tuple2"
                                            ,_0: _U.update(model,{resourceCounts: _p33._0})
                                            ,_1: $Effects.none};
+         case "ShowRoutes": return {ctor: "_Tuple2"
+                                   ,_0: _U.update(model,{routes: _p33._0})
+                                   ,_1: $Effects.none};
+         case "ShiftTimeForward": return {ctor: "_Tuple2"
+                                         ,_0: _U.update(model,{currentTime: _p33._0})
+                                         ,_1: $Effects.none};
          default: return {ctor: "_Tuple2"
-                         ,_0: _U.update(model,{routes: _p33._0})
+                         ,_0: _U.update(model,{currentTime: _p33._0})
                          ,_1: $Effects.none};}
    });
    var app = $StartApp.start({init: init
@@ -13443,6 +13471,8 @@ Elm.ResourceDecoder.make = function (_elm) {
                                         ,main: main
                                         ,NoOp: NoOp
                                         ,GetRoutes: GetRoutes
+                                        ,ShiftTimeForward: ShiftTimeForward
+                                        ,ShiftTimeBackward: ShiftTimeBackward
                                         ,GetResources: GetResources
                                         ,GetResourceCounts: GetResourceCounts
                                         ,ShowResources: ShowResources
@@ -13463,6 +13493,7 @@ Elm.ResourceDecoder.make = function (_elm) {
                                         ,createTicks: createTicks
                                         ,createTickLabels: createTickLabels
                                         ,toDisplayTime: toDisplayTime
+                                        ,toRelativeDisplayTime: toRelativeDisplayTime
                                         ,toDisplayCount: toDisplayCount
                                         ,toXYPointString: toXYPointString
                                         ,createSparkLineForResource: createSparkLineForResource

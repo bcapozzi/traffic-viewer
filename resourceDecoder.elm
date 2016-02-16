@@ -39,6 +39,8 @@ port tasks =
 type Action
   = NoOp
   | GetRoutes
+  | ShiftTimeForward (Int)
+  | ShiftTimeBackward (Int)
   | GetResources
   | GetResourceCounts
   | ShowResources (Maybe Resources)
@@ -73,14 +75,18 @@ update action model =
       ({ model | resourceCounts = maybeResourceCounts }, Effects.none)
     ShowRoutes maybeRoutes ->
       ({ model | routes = maybeRoutes }, Effects.none)
-
+    ShiftTimeForward timeNow ->
+      ({ model | currentTime = timeNow}, Effects.none)
+    ShiftTimeBackward timeNow ->
+      ({ model | currentTime = timeNow}, Effects.none)
+ 
 createLabelForResourceCount resourceCount =
   Svg.text' [x (toString (getDisplayTimeOrigin-400)), y "-80"][text resourceCount.id]
 
-createCountSvg resourceCount = 
+createCountSvg resourceCount refTime = 
       Svg.svg [ width "400", height "200", viewBox "0 0 400 200", style "margin-left:auto; margin-right:auto; display:block;"]
       [g [ transform (("translate(" ++ (toString getDisplayTimeOrigin) ++", 100)"))]
-      (List.append [(Svg.rect [x ("-" ++ (toString getDisplayTimeOrigin)), y "-100", width "400", height "200", style "fill:#FFFFFF;stroke:#222222"][])] (List.append [(createLabelForResourceCount resourceCount),(createSparkLineForResourceCount resourceCount)]  createTicks))
+      (List.append [(Svg.rect [x ("-" ++ (toString getDisplayTimeOrigin)), y "-100", width "400", height "200", style "fill:#FFFFFF;stroke:#222222"][])] (List.append [(createLabelForResourceCount resourceCount),(createSparkLineForResourceCount resourceCount refTime)]  createTicks))
       ]
 
 {-
@@ -130,12 +136,12 @@ interleave list1 list2 =
         headB :: tailB -> headB :: headA :: interleave tailA tailB
 
 --  
-toSvgs maybeResourceCounts =
+toSvgs maybeResourceCounts refTime =
   case maybeResourceCounts of
     Nothing ->
       []
     Just resourceCounts ->
-      List.map (\r -> createCountSvg r) resourceCounts
+      List.map (\r -> createCountSvg r refTime) resourceCounts
 
 view address model =
   div []
@@ -148,7 +154,9 @@ view address model =
     , displayRoutes model
     , viewResourceCounts model.resourceCounts
     , viewRoutes model.routes
-    ] (List.intersperse (br [][]) (toSvgs model.resourceCounts)))
+    , button [ onClick address (ShiftTimeForward (model.currentTime + 15)) ] [ text "+15" ]
+    , button [ onClick address (ShiftTimeBackward (model.currentTime - 15)) ] [ text "-15" ]
+    ] (List.intersperse (br [][]) (toSvgs model.resourceCounts model.currentTime)))
 
 
 
@@ -167,23 +175,26 @@ createTickLabels =
 toDisplayTime t = 
   (toString (t - getTimeOrigin))
 
+toRelativeDisplayTime t refTime = 
+  (toString (t - refTime - getTimeOrigin))
+
 toDisplayCount c =
   (toString ((toFloat -c)/4.0*100.0))
 
-toXYPointString : ResourceCount -> String
-toXYPointString resourceCount = 
-  String.concat (List.map (\p -> ( (toDisplayTime p.t) ++ "," ++ (toDisplayCount p.count) ++ " ")) (stairs resourceCount))
+toXYPointString : ResourceCount -> Int -> String
+toXYPointString resourceCount refTime = 
+  String.concat (List.map (\p -> ( (toRelativeDisplayTime p.t refTime) ++ "," ++ (toDisplayCount p.count) ++ " ")) (stairs resourceCount))
 
 createSparkLineForResource maybeResourceCount = 
   case maybeResourceCount of
     Nothing ->
       Svg.line [x1 "-200", x2 "0", y1 "50", y2 "25", stroke "black"][]
     Just resourceCount ->
-      polyline [points (toXYPointString resourceCount), stroke "blue", fill "none"][]
+      polyline [points (toXYPointString resourceCount 0), stroke "blue", fill "none"][]
 
 
-createSparkLineForResourceCount resourceCount = 
-  polyline [points (toXYPointString resourceCount), stroke "blue", fill "none"][]
+createSparkLineForResourceCount resourceCount refTime = 
+  polyline [points (toXYPointString resourceCount refTime), stroke "blue", fill "none"][]
 
 getNth n maybeResources = 
   case maybeResources of
