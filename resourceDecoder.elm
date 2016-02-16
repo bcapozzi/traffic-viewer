@@ -233,7 +233,7 @@ toPointString resource minX maxX minY maxY =
   String.concat(List.map (\c -> (toDisplayX c.x minX maxX) ++ "," ++ (toDisplayY c.y minY maxY) ++ " ") resource.coords)
 
 toSvgPolygon resource minX maxX minY maxY =
-  polygon [style "stroke:#FF0000; fill:#FFFFFF", points (toPointString resource minX maxX minY maxY) ] []
+  polygon [fillOpacity "0.4", style "stroke:#FF0000; fill:#FFFFFF", points (toPointString resource minX maxX minY maxY) ] []
 
 toSvgPolygonColoredByCount resource minX maxX minY maxY fillColorString =
   polygon [fillOpacity "0.4", style ("stroke:#FF0000; fill:" ++ fillColorString), points (toPointString resource minX maxX minY maxY) ] []
@@ -483,8 +483,10 @@ toPolylines model =
           let
             (minX,maxX) = getXBounds resources
             (minY,maxY) = getYBounds resources
+            routeLines = List.map (\r -> toPolyline r minX maxX minY maxY) routes  
+            sectorPolygons = toSvgPolygons resources
           in
-            List.map (\r -> toPolyline r minX maxX minY maxY) routes  
+            List.append routeLines sectorPolygons
 
 displayRoutes model =
   Svg.svg [ width (toString getMapDisplayWidth), 

@@ -13006,7 +13006,8 @@ Elm.ResourceDecoder.make = function (_elm) {
    });
    var toSvgPolygon = F5(function (resource,minX,maxX,minY,maxY) {
       return A2($Svg.polygon,
-      _U.list([$Svg$Attributes.style("stroke:#FF0000; fill:#FFFFFF")
+      _U.list([$Svg$Attributes.fillOpacity("0.4")
+              ,$Svg$Attributes.style("stroke:#FF0000; fill:#FFFFFF")
               ,$Svg$Attributes.points(A5(toPointString,
               resource,
               minX,
@@ -13161,17 +13162,19 @@ Elm.ResourceDecoder.make = function (_elm) {
                   _p29);
                } else {
                   var _p28 = _p23._0;
+                  var sectorPolygons = toSvgPolygons(_p28);
                   var _p26 = getYBounds(_p28);
                   var minY = _p26._0;
                   var maxY = _p26._1;
                   var _p27 = getXBounds(_p28);
                   var minX = _p27._0;
                   var maxX = _p27._1;
-                  return A2($List.map,
+                  var routeLines = A2($List.map,
                   function (r) {
                      return A5(toPolyline,r,minX,maxX,minY,maxY);
                   },
                   _p29);
+                  return A2($List.append,routeLines,sectorPolygons);
                }
          }
    };
