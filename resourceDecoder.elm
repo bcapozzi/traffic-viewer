@@ -129,7 +129,7 @@ view address model =
     [ button [ onClick address GetResources ] [ text "Click to get resources!" ]
     , button [ onClick address GetResourceCounts ] [ text "Click to get resource counts!" ]
     , br [][]
-    , displayResources model.resources
+    , displayResources model
     , viewResourceCounts model.resourceCounts
     ] (List.intersperse (br [][]) (toSvgs model.resourceCounts)))
 
@@ -182,11 +182,19 @@ toStringList maybeResource =
     Just resource -> 
       List.map (\c -> ((toString c.x) ++ "," ++ (toString c.y))) resource.coords
 
-toDisplayX cx =
-  toString (cx/4.5)
 
-toDisplayY cy = 
-  toString (-cy/4.5)
+getXScaleFactor minX maxX = 
+  getMapDisplayWidth / (2.0*(maxX-minX))
+
+getYScaleFactor minY maxY = 
+  getMapDisplayHeight / (2.0*(maxY-minY))
+
+toDisplayX cx minX maxX =
+-- 600nmi --> 800pixels wide
+  toString (cx*(getXScaleFactor minX maxX))
+
+toDisplayY cy minY maxY  = 
+  toString (-cy*(getYScaleFactor minY maxY))
 
 getXVals: List Coord -> List Float
 getXVals coords =
@@ -203,64 +211,164 @@ getMaxValueOrDefault maybeMax =
     Just max ->
       max
 
---toSvgCircles: Resource -> List svg
-toSvgCircles resource =
-  List.map (\c -> Svg.circle [ cx (toDisplayX c.x)
-                             ,  cy (toDisplayY c.y)
-                             , r "2"
-                             , style "fill: #60B5CC;"
-                             ]
-                            []) resource.coords
-
-
-toSvgTextList maybeResource = 
-  case maybeResource of
-    Nothing ->
-      []
-    Just resource -> 
-      List.map (\c -> Svg.circle [ cx (toDisplayX c.x)
-                                ,  cy (toDisplayY c.y)
-                                , r "2"
-                                , style "fill: #60B5CC;"
-                                ]
-                              []) resource.coords
  
 -- convert single resource coords to SVG polygon
 
-toPointString resource =
-  String.concat(List.map (\c -> (toDisplayX c.x) ++ "," ++ (toDisplayY c.y) ++ " ") resource.coords)
+toPointString resource minX maxX minY maxY =
+  String.concat(List.map (\c -> (toDisplayX c.x minX maxX) ++ "," ++ (toDisplayY c.y minY maxY) ++ " ") resource.coords)
 
-toSvgPolygon resource =
-  polygon [style "stroke:#FF0000; fill:#FFFFFF", points (toPointString resource) ] []
+toSvgPolygon resource minX maxX minY maxY =
+  polygon [style "stroke:#FF0000; fill:#FFFFFF", points (toPointString resource minX maxX minY maxY) ] []
+
+toSvgPolygonColoredByCount resource minX maxX minY maxY fillColorString =
+  polygon [fillOpacity "0.4", style ("stroke:#FF0000; fill:" ++ fillColorString), points (toPointString resource minX maxX minY maxY) ] []
+
+getXCoordValue maybeCoord = 
+  case maybeCoord of
+    Nothing ->
+      0
+    Just coord ->
+      coord.x
+
+getMinXCoord resource = 
+  getXCoordValue (List.head (List.sortBy .x resource.coords))
+
+getMaxXCoord resource = 
+  getXCoordValue (List.head (List.reverse (List.sortBy .x resource.coords)))
+
+getMaxXCoords resources = 
+  List.map (\r -> getMaxXCoord r) resources
+
+getMinXCoords resources = 
+  List.map (\r -> getMinXCoord r) resources
+
+getYCoordValue maybeCoord = 
+  case maybeCoord of
+    Nothing ->
+      0
+    Just coord ->
+      coord.y
+
+getMinYCoord resource = 
+  getYCoordValue (List.head (List.sortBy .y resource.coords))
+
+getMaxYCoord resource = 
+  getYCoordValue (List.head (List.reverse (List.sortBy .y resource.coords)))
+
+getMaxYCoords resources = 
+  List.map (\r -> getMaxYCoord r) resources
+
+getMinYCoords resources = 
+  List.map (\r -> getMinYCoord r) resources
+
+getBoundValue maybeValue =
+  case maybeValue of
+    Nothing ->
+      0
+    Just value ->
+      value
+
+getXBounds resources = 
+  let
+    maxX = getBoundValue (List.head (List.reverse (List.sort (getMaxXCoords resources))))
+    minX = getBoundValue (List.head (List.sort (getMinXCoords resources)))
+  in
+  (minX, maxX)
+
+getYBounds resources = 
+  let
+    maxY = getBoundValue( List.head (List.reverse (List.sort (getMaxYCoords resources))))
+    minY = getBoundValue( List.head (List.sort (getMinYCoords resources)))
+  in
+  (minY, maxY)
 
 toSvgPolygons resources =
-  List.map (\r -> (toSvgPolygon r)) resources
+  let 
+    (minX,maxX) = getXBounds resources
+    (minY,maxY) = getYBounds resources
+  in
+  List.map (\r -> (toSvgPolygon r minX maxX minY maxY)) resources
+
+getCountValue maybeValue = 
+   case maybeValue of 
+     Nothing ->
+       0
+     Just value ->
+       value
+
+getMaxCountForResource resourceCount =
+  getCountValue (List.head (List.reverse (List.sort (List.map (\c -> c.count) resourceCount.counts))))
+
+getMaxCount resourceCounts =
+  getCountValue (List.head (List.reverse (List.sort (List.map (\r -> getMaxCountForResource r) resourceCounts))))
+
+getResourceCountsValue maybeResourceCounts = 
+  case maybeResourceCounts of
+    Nothing ->
+      0
+    Just resourceCounts ->
+      getMaxCountForResource resourceCounts
+
+getMaxCountValueForResource : Resource -> ResourceCounts -> Int
+getMaxCountValueForResource resource resourceCounts = 
+  getResourceCountsValue (List.head (List.filter (\r -> r.id == resource.id) resourceCounts))
+
+getColorForResource resource resourceCounts =
+  let
+    maxCount = getMaxCount resourceCounts
+    count = getMaxCountValueForResource resource resourceCounts
+  in
+    if (toFloat(count) / toFloat(maxCount) > 0.8) then
+      "#0000FF"
+    else
+      if (toFloat(count) / toFloat(maxCount) > 0.5) then
+        "#FF00FF"
+      else
+        "#FFFFFF"
+    
+-- sort by count
+
+toSvgPolygonsColoredByCount resources resourceCounts =
+  let 
+    (minX,maxX) = getXBounds resources
+    (minY,maxY) = getYBounds resources
+  in
+  List.map (\r -> (toSvgPolygonColoredByCount r minX maxX minY maxY (getColorForResource r resourceCounts))) resources
 
 toPolygons maybeResources = 
   [
     polygon [ fill "#60B5CC", points "23.298,143.724 23.298,0 179.573,0"][]
   ]
 
---toSvgShapes: Maybe Resources -> List (List svg)
-toSvgShapes maybeResources =
-  case maybeResources of
+
+toSvgPolygonsOrNothing model =
+  case model.resources of
     Nothing ->
       []
     Just resources ->
-      List.map (\r -> (toSvgCircles r)) resources
+      case model.resourceCounts of
+        Nothing ->
+          (toSvgPolygons resources)
+        Just resourceCounts ->
+          (toSvgPolygonsColoredByCount resources resourceCounts)
 
-toSvgPolygonsOrNothing maybeResources =
-  case maybeResources of
-    Nothing ->
-      []
-    Just resources ->
-      (toSvgPolygons resources)
+getMapDisplayWidth = 
+  600
 
-displayResources maybeResources = 
-  Svg.svg [ width "200", height "200", viewBox "0 0 200 200", fill "#333333", style "margin-left:auto; margin-right:auto; display:block;" ]
-    [g [ transform ("translate(100, 100)") ]
-    ((Svg.rect [x "-100", y "-100", width "200", height "200", style "fill:#FFFFFF;stroke:#222222"][]) ::
-    (toSvgPolygonsOrNothing maybeResources))
+getMapDisplayHeight = 
+  600
+
+getMapDisplayViewBox =
+  "0 0 " ++ (toString getMapDisplayWidth) ++ " " ++ (toString getMapDisplayHeight)
+
+displayResources model = 
+  Svg.svg [ width (toString getMapDisplayWidth), 
+            height (toString getMapDisplayHeight), 
+            viewBox getMapDisplayViewBox, 
+            fill "#333333", style "margin-left:auto; margin-right:auto; display:block;" ]
+    [g [ transform (("translate(" ++ (toString (getMapDisplayWidth/2)) ++ ", " ++ (toString (getMapDisplayHeight/2)) ++ ")")) ]
+    ((Svg.rect [x ("-" ++ (toString (getMapDisplayWidth/2))), y ("-" ++ (toString (getMapDisplayHeight/2))), width (toString getMapDisplayWidth), height (toString getMapDisplayHeight), style "fill:#FFFFFF;stroke:#222222"][]) ::
+    (toSvgPolygonsOrNothing model))
     ]
 
 viewCoords coords = 

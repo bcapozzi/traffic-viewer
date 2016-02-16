@@ -12612,18 +12612,165 @@ Elm.Main.make = function (_elm) {
       },
       coords);
    };
+   var getMapDisplayHeight = 600;
+   var getMapDisplayWidth = 600;
+   var getMapDisplayViewBox = A2($Basics._op["++"],
+   "0 0 ",
+   A2($Basics._op["++"],
+   $Basics.toString(getMapDisplayWidth),
+   A2($Basics._op["++"],
+   " ",
+   $Basics.toString(getMapDisplayHeight))));
    var toPolygons = function (maybeResources) {
       return _U.list([A2($Svg.polygon,
       _U.list([$Svg$Attributes.fill("#60B5CC")
               ,$Svg$Attributes.points("23.298,143.724 23.298,0 179.573,0")]),
       _U.list([]))]);
    };
-   var getMaxValueOrDefault = function (maybeMax) {
-      var _p2 = maybeMax;
+   var getCountValue = function (maybeValue) {
+      var _p2 = maybeValue;
       if (_p2.ctor === "Nothing") {
-            return 200;
+            return 0;
          } else {
             return _p2._0;
+         }
+   };
+   var getMaxCountForResource = function (resourceCount) {
+      return getCountValue($List.head($List.reverse($List.sort(A2($List.map,
+      function (c) {
+         return c.count;
+      },
+      resourceCount.counts)))));
+   };
+   var getResourceCountsValue = function (maybeResourceCounts) {
+      var _p3 = maybeResourceCounts;
+      if (_p3.ctor === "Nothing") {
+            return 0;
+         } else {
+            return getMaxCountForResource(_p3._0);
+         }
+   };
+   var getMaxCountValueForResource = F2(function (resource,
+   resourceCounts) {
+      return getResourceCountsValue($List.head(A2($List.filter,
+      function (r) {
+         return _U.eq(r.id,resource.id);
+      },
+      resourceCounts)));
+   });
+   var getMaxCount = function (resourceCounts) {
+      return getCountValue($List.head($List.reverse($List.sort(A2($List.map,
+      function (r) {
+         return getMaxCountForResource(r);
+      },
+      resourceCounts)))));
+   };
+   var getColorForResource = F2(function (resource,
+   resourceCounts) {
+      var count = A2(getMaxCountValueForResource,
+      resource,
+      resourceCounts);
+      var maxCount = getMaxCount(resourceCounts);
+      return _U.cmp($Basics.toFloat(count) / $Basics.toFloat(maxCount),
+      0.8) > 0 ? "#0000FF" : _U.cmp($Basics.toFloat(count) / $Basics.toFloat(maxCount),
+      0.5) > 0 ? "#FF00FF" : "#FFFFFF";
+   });
+   var getBoundValue = function (maybeValue) {
+      var _p4 = maybeValue;
+      if (_p4.ctor === "Nothing") {
+            return 0;
+         } else {
+            return _p4._0;
+         }
+   };
+   var getYCoordValue = function (maybeCoord) {
+      var _p5 = maybeCoord;
+      if (_p5.ctor === "Nothing") {
+            return 0;
+         } else {
+            return _p5._0.y;
+         }
+   };
+   var getMinYCoord = function (resource) {
+      return getYCoordValue($List.head(A2($List.sortBy,
+      function (_) {
+         return _.y;
+      },
+      resource.coords)));
+   };
+   var getMinYCoords = function (resources) {
+      return A2($List.map,
+      function (r) {
+         return getMinYCoord(r);
+      },
+      resources);
+   };
+   var getMaxYCoord = function (resource) {
+      return getYCoordValue($List.head($List.reverse(A2($List.sortBy,
+      function (_) {
+         return _.y;
+      },
+      resource.coords))));
+   };
+   var getMaxYCoords = function (resources) {
+      return A2($List.map,
+      function (r) {
+         return getMaxYCoord(r);
+      },
+      resources);
+   };
+   var getYBounds = function (resources) {
+      var minY = getBoundValue($List.head($List.sort(getMinYCoords(resources))));
+      var maxY = getBoundValue($List.head($List.reverse($List.sort(getMaxYCoords(resources)))));
+      return {ctor: "_Tuple2",_0: minY,_1: maxY};
+   };
+   var getXCoordValue = function (maybeCoord) {
+      var _p6 = maybeCoord;
+      if (_p6.ctor === "Nothing") {
+            return 0;
+         } else {
+            return _p6._0.x;
+         }
+   };
+   var getMinXCoord = function (resource) {
+      return getXCoordValue($List.head(A2($List.sortBy,
+      function (_) {
+         return _.x;
+      },
+      resource.coords)));
+   };
+   var getMinXCoords = function (resources) {
+      return A2($List.map,
+      function (r) {
+         return getMinXCoord(r);
+      },
+      resources);
+   };
+   var getMaxXCoord = function (resource) {
+      return getXCoordValue($List.head($List.reverse(A2($List.sortBy,
+      function (_) {
+         return _.x;
+      },
+      resource.coords))));
+   };
+   var getMaxXCoords = function (resources) {
+      return A2($List.map,
+      function (r) {
+         return getMaxXCoord(r);
+      },
+      resources);
+   };
+   var getXBounds = function (resources) {
+      var minX = getBoundValue($List.head($List.sort(getMinXCoords(resources))));
+      var maxX = getBoundValue($List.head($List.reverse($List.sort(getMaxXCoords(resources)))));
+      return {ctor: "_Tuple2",_0: minX,_1: maxX};
+   };
+   var getMaxValueOrDefault = function (maybeMax) {
+      var _p7 = maybeMax;
+      if (_p7.ctor === "Nothing") {
+            return 200;
+         } else {
+            return _p7._0;
          }
    };
    var getXVals = function (coords) {
@@ -12632,107 +12779,142 @@ Elm.Main.make = function (_elm) {
    var getMaxX = function (coords) {
       return getMaxValueOrDefault($List.head($List.reverse($List.sort(getXVals(coords)))));
    };
-   var toDisplayY = function (cy) {
-      return $Basics.toString((0 - cy) / 4.5);
-   };
-   var toDisplayX = function (cx) {
-      return $Basics.toString(cx / 4.5);
-   };
-   var toSvgCircles = function (resource) {
-      return A2($List.map,
-      function (c) {
-         return A2($Svg.circle,
-         _U.list([$Svg$Attributes.cx(toDisplayX(c.x))
-                 ,$Svg$Attributes.cy(toDisplayY(c.y))
-                 ,$Svg$Attributes.r("2")
-                 ,$Svg$Attributes.style("fill: #60B5CC;")]),
-         _U.list([]));
-      },
-      resource.coords);
-   };
-   var toSvgShapes = function (maybeResources) {
-      var _p3 = maybeResources;
-      if (_p3.ctor === "Nothing") {
-            return _U.list([]);
-         } else {
-            return A2($List.map,
-            function (r) {
-               return toSvgCircles(r);
-            },
-            _p3._0);
-         }
-   };
-   var toSvgTextList = function (maybeResource) {
-      var _p4 = maybeResource;
-      if (_p4.ctor === "Nothing") {
-            return _U.list([]);
-         } else {
-            return A2($List.map,
-            function (c) {
-               return A2($Svg.circle,
-               _U.list([$Svg$Attributes.cx(toDisplayX(c.x))
-                       ,$Svg$Attributes.cy(toDisplayY(c.y))
-                       ,$Svg$Attributes.r("2")
-                       ,$Svg$Attributes.style("fill: #60B5CC;")]),
-               _U.list([]));
-            },
-            _p4._0.coords);
-         }
-   };
-   var toPointString = function (resource) {
+   var getYScaleFactor = F2(function (minY,maxY) {
+      return getMapDisplayHeight / (2.0 * (maxY - minY));
+   });
+   var toDisplayY = F3(function (cy,minY,maxY) {
+      return $Basics.toString((0 - cy) * A2(getYScaleFactor,
+      minY,
+      maxY));
+   });
+   var getXScaleFactor = F2(function (minX,maxX) {
+      return getMapDisplayWidth / (2.0 * (maxX - minX));
+   });
+   var toDisplayX = F3(function (cx,minX,maxX) {
+      return $Basics.toString(cx * A2(getXScaleFactor,minX,maxX));
+   });
+   var toPointString = F5(function (resource,minX,maxX,minY,maxY) {
       return $String.concat(A2($List.map,
       function (c) {
          return A2($Basics._op["++"],
-         toDisplayX(c.x),
+         A3(toDisplayX,c.x,minX,maxX),
          A2($Basics._op["++"],
          ",",
-         A2($Basics._op["++"],toDisplayY(c.y)," ")));
+         A2($Basics._op["++"],A3(toDisplayY,c.y,minY,maxY)," ")));
       },
       resource.coords));
-   };
-   var toSvgPolygon = function (resource) {
+   });
+   var toSvgPolygon = F5(function (resource,minX,maxX,minY,maxY) {
       return A2($Svg.polygon,
       _U.list([$Svg$Attributes.style("stroke:#FF0000; fill:#FFFFFF")
-              ,$Svg$Attributes.points(toPointString(resource))]),
+              ,$Svg$Attributes.points(A5(toPointString,
+              resource,
+              minX,
+              maxX,
+              minY,
+              maxY))]),
       _U.list([]));
-   };
+   });
    var toSvgPolygons = function (resources) {
+      var _p8 = getYBounds(resources);
+      var minY = _p8._0;
+      var maxY = _p8._1;
+      var _p9 = getXBounds(resources);
+      var minX = _p9._0;
+      var maxX = _p9._1;
       return A2($List.map,
       function (r) {
-         return toSvgPolygon(r);
+         return A5(toSvgPolygon,r,minX,maxX,minY,maxY);
       },
       resources);
    };
-   var toSvgPolygonsOrNothing = function (maybeResources) {
-      var _p5 = maybeResources;
-      if (_p5.ctor === "Nothing") {
+   var toSvgPolygonColoredByCount = F6(function (resource,
+   minX,
+   maxX,
+   minY,
+   maxY,
+   fillColorString) {
+      return A2($Svg.polygon,
+      _U.list([$Svg$Attributes.fillOpacity("0.4")
+              ,$Svg$Attributes.style(A2($Basics._op["++"],
+              "stroke:#FF0000; fill:",
+              fillColorString))
+              ,$Svg$Attributes.points(A5(toPointString,
+              resource,
+              minX,
+              maxX,
+              minY,
+              maxY))]),
+      _U.list([]));
+   });
+   var toSvgPolygonsColoredByCount = F2(function (resources,
+   resourceCounts) {
+      var _p10 = getYBounds(resources);
+      var minY = _p10._0;
+      var maxY = _p10._1;
+      var _p11 = getXBounds(resources);
+      var minX = _p11._0;
+      var maxX = _p11._1;
+      return A2($List.map,
+      function (r) {
+         return A6(toSvgPolygonColoredByCount,
+         r,
+         minX,
+         maxX,
+         minY,
+         maxY,
+         A2(getColorForResource,r,resourceCounts));
+      },
+      resources);
+   });
+   var toSvgPolygonsOrNothing = function (model) {
+      var _p12 = model.resources;
+      if (_p12.ctor === "Nothing") {
             return _U.list([]);
          } else {
-            return toSvgPolygons(_p5._0);
+            var _p14 = _p12._0;
+            var _p13 = model.resourceCounts;
+            if (_p13.ctor === "Nothing") {
+                  return toSvgPolygons(_p14);
+               } else {
+                  return A2(toSvgPolygonsColoredByCount,_p14,_p13._0);
+               }
          }
    };
-   var displayResources = function (maybeResources) {
+   var displayResources = function (model) {
       return A2($Svg.svg,
-      _U.list([$Svg$Attributes.width("200")
-              ,$Svg$Attributes.height("200")
-              ,$Svg$Attributes.viewBox("0 0 200 200")
+      _U.list([$Svg$Attributes.width($Basics.toString(getMapDisplayWidth))
+              ,$Svg$Attributes.height($Basics.toString(getMapDisplayHeight))
+              ,$Svg$Attributes.viewBox(getMapDisplayViewBox)
               ,$Svg$Attributes.fill("#333333")
               ,$Svg$Attributes.style("margin-left:auto; margin-right:auto; display:block;")]),
       _U.list([A2($Svg.g,
-      _U.list([$Svg$Attributes.transform("translate(100, 100)")]),
+      _U.list([$Svg$Attributes.transform(A2($Basics._op["++"],
+      "translate(",
+      A2($Basics._op["++"],
+      $Basics.toString(getMapDisplayWidth / 2),
+      A2($Basics._op["++"],
+      ", ",
+      A2($Basics._op["++"],
+      $Basics.toString(getMapDisplayHeight / 2),
+      ")")))))]),
       A2($List._op["::"],
       A2($Svg.rect,
-      _U.list([$Svg$Attributes.x("-100")
-              ,$Svg$Attributes.y("-100")
-              ,$Svg$Attributes.width("200")
-              ,$Svg$Attributes.height("200")
+      _U.list([$Svg$Attributes.x(A2($Basics._op["++"],
+              "-",
+              $Basics.toString(getMapDisplayWidth / 2)))
+              ,$Svg$Attributes.y(A2($Basics._op["++"],
+              "-",
+              $Basics.toString(getMapDisplayHeight / 2)))
+              ,$Svg$Attributes.width($Basics.toString(getMapDisplayWidth))
+              ,$Svg$Attributes.height($Basics.toString(getMapDisplayHeight))
               ,$Svg$Attributes.style("fill:#FFFFFF;stroke:#222222")]),
       _U.list([])),
-      toSvgPolygonsOrNothing(maybeResources)))]));
+      toSvgPolygonsOrNothing(model)))]));
    };
    var toStringList = function (maybeResource) {
-      var _p6 = maybeResource;
-      if (_p6.ctor === "Nothing") {
+      var _p15 = maybeResource;
+      if (_p15.ctor === "Nothing") {
             return _U.list([]);
          } else {
             return A2($List.map,
@@ -12741,15 +12923,15 @@ Elm.Main.make = function (_elm) {
                $Basics.toString(c.x),
                A2($Basics._op["++"],",",$Basics.toString(c.y)));
             },
-            _p6._0.coords);
+            _p15._0.coords);
          }
    };
    var getNth = F2(function (n,maybeResources) {
-      var _p7 = maybeResources;
-      if (_p7.ctor === "Nothing") {
+      var _p16 = maybeResources;
+      if (_p16.ctor === "Nothing") {
             return $Maybe.Nothing;
          } else {
-            return $List.head(A2($List.drop,n,_p7._0));
+            return $List.head(A2($List.drop,n,_p16._0));
          }
    });
    var toDisplayCount = function (c) {
@@ -12759,17 +12941,17 @@ Elm.Main.make = function (_elm) {
       return _U.eq(A2($Basics._op["%"],x,60),0) ? "4" : "2";
    };
    var interleave = F2(function (list1,list2) {
-      var _p8 = list1;
-      if (_p8.ctor === "[]") {
+      var _p17 = list1;
+      if (_p17.ctor === "[]") {
             return list2;
          } else {
-            var _p9 = list2;
-            if (_p9.ctor === "[]") {
+            var _p18 = list2;
+            if (_p18.ctor === "[]") {
                   return list1;
                } else {
                   return A2($List._op["::"],
-                  _p9._0,
-                  A2($List._op["::"],_p8._0,A2(interleave,_p8._1,_p9._1)));
+                  _p18._0,
+                  A2($List._op["::"],_p17._0,A2(interleave,_p17._1,_p18._1)));
                }
          }
    });
@@ -12853,8 +13035,8 @@ Elm.Main.make = function (_elm) {
       stairs(resourceCount)));
    };
    var createSparkLineForResource = function (maybeResourceCount) {
-      var _p10 = maybeResourceCount;
-      if (_p10.ctor === "Nothing") {
+      var _p19 = maybeResourceCount;
+      if (_p19.ctor === "Nothing") {
             return A2($Svg.line,
             _U.list([$Svg$Attributes.x1("-200")
                     ,$Svg$Attributes.x2("0")
@@ -12864,7 +13046,7 @@ Elm.Main.make = function (_elm) {
             _U.list([]));
          } else {
             return A2($Svg.polyline,
-            _U.list([$Svg$Attributes.points(toXYPointString(_p10._0))
+            _U.list([$Svg$Attributes.points(toXYPointString(_p19._0))
                     ,$Svg$Attributes.stroke("blue")
                     ,$Svg$Attributes.fill("none")]),
             _U.list([]));
@@ -12905,15 +13087,15 @@ Elm.Main.make = function (_elm) {
       createTicks)))]));
    };
    var toSvgs = function (maybeResourceCounts) {
-      var _p11 = maybeResourceCounts;
-      if (_p11.ctor === "Nothing") {
+      var _p20 = maybeResourceCounts;
+      if (_p20.ctor === "Nothing") {
             return _U.list([]);
          } else {
             return A2($List.map,
             function (r) {
                return createCountSvg(r);
             },
-            _p11._0);
+            _p20._0);
          }
    };
    var view = F2(function (address,model) {
@@ -12927,7 +13109,7 @@ Elm.Main.make = function (_elm) {
               _U.list([A2($Html$Events.onClick,address,GetResourceCounts)]),
               _U.list([$Html.text("Click to get resource counts!")]))
               ,A2($Html.br,_U.list([]),_U.list([]))
-              ,displayResources(model.resources)
+              ,displayResources(model)
               ,viewResourceCounts(model.resourceCounts)]),
       A2($List.intersperse,
       A2($Html.br,_U.list([]),_U.list([])),
@@ -12944,8 +13126,8 @@ Elm.Main.make = function (_elm) {
    ShowResources,
    $Task.toMaybe(A2($Http.get,decoderColl,resourcesUrl))));
    var update = F2(function (action,model) {
-      var _p12 = action;
-      switch (_p12.ctor)
+      var _p21 = action;
+      switch (_p21.ctor)
       {case "NoOp": return {ctor: "_Tuple2"
                            ,_0: model
                            ,_1: $Effects.none};
@@ -12956,10 +13138,10 @@ Elm.Main.make = function (_elm) {
                                           ,_0: _U.update(model,{resourceCounts: $Maybe.Nothing})
                                           ,_1: getResourceCounts};
          case "ShowResources": return {ctor: "_Tuple2"
-                                      ,_0: _U.update(model,{resources: _p12._0})
+                                      ,_0: _U.update(model,{resources: _p21._0})
                                       ,_1: $Effects.none};
          default: return {ctor: "_Tuple2"
-                         ,_0: _U.update(model,{resourceCounts: _p12._0})
+                         ,_0: _U.update(model,{resourceCounts: _p21._0})
                          ,_1: $Effects.none};}
    });
    var app = $StartApp.start({init: init
@@ -13002,19 +13184,42 @@ Elm.Main.make = function (_elm) {
                              ,createSparkLineForResourceCount: createSparkLineForResourceCount
                              ,getNth: getNth
                              ,toStringList: toStringList
+                             ,getXScaleFactor: getXScaleFactor
+                             ,getYScaleFactor: getYScaleFactor
                              ,toDisplayX: toDisplayX
                              ,toDisplayY: toDisplayY
                              ,getXVals: getXVals
                              ,getMaxX: getMaxX
                              ,getMaxValueOrDefault: getMaxValueOrDefault
-                             ,toSvgCircles: toSvgCircles
-                             ,toSvgTextList: toSvgTextList
                              ,toPointString: toPointString
                              ,toSvgPolygon: toSvgPolygon
+                             ,toSvgPolygonColoredByCount: toSvgPolygonColoredByCount
+                             ,getXCoordValue: getXCoordValue
+                             ,getMinXCoord: getMinXCoord
+                             ,getMaxXCoord: getMaxXCoord
+                             ,getMaxXCoords: getMaxXCoords
+                             ,getMinXCoords: getMinXCoords
+                             ,getYCoordValue: getYCoordValue
+                             ,getMinYCoord: getMinYCoord
+                             ,getMaxYCoord: getMaxYCoord
+                             ,getMaxYCoords: getMaxYCoords
+                             ,getMinYCoords: getMinYCoords
+                             ,getBoundValue: getBoundValue
+                             ,getXBounds: getXBounds
+                             ,getYBounds: getYBounds
                              ,toSvgPolygons: toSvgPolygons
+                             ,getCountValue: getCountValue
+                             ,getMaxCountForResource: getMaxCountForResource
+                             ,getMaxCount: getMaxCount
+                             ,getResourceCountsValue: getResourceCountsValue
+                             ,getMaxCountValueForResource: getMaxCountValueForResource
+                             ,getColorForResource: getColorForResource
+                             ,toSvgPolygonsColoredByCount: toSvgPolygonsColoredByCount
                              ,toPolygons: toPolygons
-                             ,toSvgShapes: toSvgShapes
                              ,toSvgPolygonsOrNothing: toSvgPolygonsOrNothing
+                             ,getMapDisplayWidth: getMapDisplayWidth
+                             ,getMapDisplayHeight: getMapDisplayHeight
+                             ,getMapDisplayViewBox: getMapDisplayViewBox
                              ,displayResources: displayResources
                              ,viewCoords: viewCoords
                              ,viewResourceCounts: viewResourceCounts

@@ -1,5 +1,5 @@
 { "resourceCounts" : [
-  { "id" : "ZTL-S57-200",
+  { "id" : "ZTL-S15-35000",
     "counts" : [
     { "t" : 0,
       "count" : 1}
@@ -26,7 +26,7 @@
       "count" : 0}
     ]}
     ,
-  { "id" : "ZTL-S33-200",
+  { "id" : "ZTL-S34-30000",
     "counts" : [
     { "t" : 0,
       "count" : 2}
