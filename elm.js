@@ -12489,15 +12489,80 @@ Elm.StartApp.make = function (_elm) {
                                  ,Config: Config
                                  ,App: App};
 };
-Elm.Main = Elm.Main || {};
-Elm.Main.make = function (_elm) {
+Elm.GeoUtils = Elm.GeoUtils || {};
+Elm.GeoUtils.make = function (_elm) {
    "use strict";
-   _elm.Main = _elm.Main || {};
-   if (_elm.Main.values) return _elm.Main.values;
+   _elm.GeoUtils = _elm.GeoUtils || {};
+   if (_elm.GeoUtils.values) return _elm.GeoUtils.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var mod = F2(function (y,x) {
+      return y - x * $Basics.toFloat($Basics.floor(y / x));
+   });
+   var degreesToNmi = function (deg) {    return deg * 60.0;};
+   var toDegrees = function (rad) {
+      return rad * 180.0 / $Basics.pi;
+   };
+   var toRadians = function (deg) {
+      return deg * $Basics.pi / 180.0;
+   };
+   var getDistanceBetween = F2(function (p1,p2) {
+      var lon2 = toRadians(p2.lonDeg);
+      var lat2 = toRadians(p2.latDeg);
+      var lon1 = toRadians(p1.lonDeg);
+      var term2 = $Basics.sin((lon1 - lon2) / 2);
+      var lat1 = toRadians(p1.latDeg);
+      var term1 = $Basics.sin((lat1 - lat2) / 2);
+      var d = 2 * $Basics.asin($Basics.sqrt(term1 * term1 + $Basics.cos(lat1) * $Basics.cos(lat2) * term2 * term2));
+      return degreesToNmi(toDegrees(d));
+   });
+   var getAzimuthBetween = F2(function (p1,p2) {
+      var lon2 = toRadians(p2.lonDeg);
+      var lat2 = toRadians(p2.latDeg);
+      var lon1 = toRadians(p1.lonDeg);
+      var arg1 = $Basics.sin(lon1 - lon2) * $Basics.cos(lat2);
+      var lat1 = toRadians(p1.latDeg);
+      var arg2 = $Basics.cos(lat1) * $Basics.sin(lat2) - $Basics.sin(lat1) * $Basics.cos(lat2) * $Basics.cos(lon1 - lon2);
+      var tc1 = A2(mod,A2($Basics.atan2,arg1,arg2),2 * $Basics.pi);
+      return tc1;
+   });
+   var getEastNorthOffsetNmiBetween = F2(function (p1,p2) {
+      var az = A2(getAzimuthBetween,p1,p2);
+      var dnmi = A2(getDistanceBetween,p1,p2);
+      return {ctor: "_Tuple2"
+             ,_0: dnmi * $Basics.sin(az)
+             ,_1: dnmi * $Basics.cos(az)};
+   });
+   var GeoPoint2D = F2(function (a,b) {
+      return {latDeg: a,lonDeg: b};
+   });
+   return _elm.GeoUtils.values = {_op: _op
+                                 ,GeoPoint2D: GeoPoint2D
+                                 ,toRadians: toRadians
+                                 ,toDegrees: toDegrees
+                                 ,degreesToNmi: degreesToNmi
+                                 ,getDistanceBetween: getDistanceBetween
+                                 ,getAzimuthBetween: getAzimuthBetween
+                                 ,mod: mod
+                                 ,getEastNorthOffsetNmiBetween: getEastNorthOffsetNmiBetween};
+};
+Elm.ResourceDecoder = Elm.ResourceDecoder || {};
+Elm.ResourceDecoder.make = function (_elm) {
+   "use strict";
+   _elm.ResourceDecoder = _elm.ResourceDecoder || {};
+   if (_elm.ResourceDecoder.values)
+   return _elm.ResourceDecoder.values;
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
    $Debug = Elm.Debug.make(_elm),
    $Effects = Elm.Effects.make(_elm),
+   $GeoUtils = Elm.GeoUtils.make(_elm),
    $Html = Elm.Html.make(_elm),
    $Html$Events = Elm.Html.Events.make(_elm),
    $Http = Elm.Http.make(_elm),
@@ -12512,6 +12577,22 @@ Elm.Main.make = function (_elm) {
    $Svg$Attributes = Elm.Svg.Attributes.make(_elm),
    $Task = Elm.Task.make(_elm);
    var _op = {};
+   var geoPointDecoder = A3($Json$Decode.object2,
+   $GeoUtils.GeoPoint2D,
+   A2($Json$Decode._op[":="],"latDeg",$Json$Decode.$float),
+   A2($Json$Decode._op[":="],"lonDeg",$Json$Decode.$float));
+   var Route = F2(function (a,b) {    return {id: a,points: b};});
+   var routeDecoder = A3($Json$Decode.object2,
+   Route,
+   A2($Json$Decode._op[":="],"id",$Json$Decode.string),
+   A2($Json$Decode._op[":="],
+   "points",
+   $Json$Decode.list(geoPointDecoder)));
+   var routeCollectionDecoder = A2($Json$Decode.object1,
+   $Basics.identity,
+   A2($Json$Decode._op[":="],
+   "routes",
+   $Json$Decode.list(routeDecoder)));
    var ResourceCount = F2(function (a,b) {
       return {id: a,counts: b};
    });
@@ -12605,6 +12686,22 @@ Elm.Main.make = function (_elm) {
             " resource counts, baby!")))]));
          }
    };
+   var viewRoutes = function (maybeRoutes) {
+      var _p2 = maybeRoutes;
+      if (_p2.ctor === "Nothing") {
+            return A2($Html.div,
+            _U.list([]),
+            _U.list([$Html.text("No routes to display.  Try clicking the button")]));
+         } else {
+            return A2($Html.div,
+            _U.list([]),
+            _U.list([$Html.text(A2($Basics._op["++"],
+            "Got ",
+            A2($Basics._op["++"],
+            $Basics.toString($List.length(_p2._0)),
+            " routes, baby!")))]));
+         }
+   };
    var viewCoords = function (coords) {
       return A2($List.map,
       function (c) {
@@ -12612,6 +12709,109 @@ Elm.Main.make = function (_elm) {
       },
       coords);
    };
+   var getMinRouteY = function (route) {
+      var yvals = A2($List.map,
+      function (p) {
+         return p.y;
+      },
+      route.points);
+      var ymin = $List.minimum(yvals);
+      var _p3 = ymin;
+      if (_p3.ctor === "Nothing") {
+            return 0;
+         } else {
+            return _p3._0;
+         }
+   };
+   var getMaxRouteY = function (route) {
+      var yvals = A2($List.map,
+      function (p) {
+         return p.y;
+      },
+      route.points);
+      var ymax = $List.maximum(yvals);
+      var _p4 = ymax;
+      if (_p4.ctor === "Nothing") {
+            return 0;
+         } else {
+            return _p4._0;
+         }
+   };
+   var getValueForBound = function (maybeValue) {
+      var _p5 = maybeValue;
+      if (_p5.ctor === "Nothing") {
+            return 0;
+         } else {
+            return _p5._0;
+         }
+   };
+   var getRouteYBounds = function (routes) {
+      var minY = $List.minimum(A2($List.map,
+      function (r) {
+         return getMinRouteY(r);
+      },
+      routes));
+      var maxY = $List.maximum(A2($List.map,
+      function (r) {
+         return getMaxRouteY(r);
+      },
+      routes));
+      return {ctor: "_Tuple2"
+             ,_0: getValueForBound(minY)
+             ,_1: getValueForBound(maxY)};
+   };
+   var getMinRouteX = function (route) {
+      var xvals = A2($List.map,
+      function (p) {
+         return p.x;
+      },
+      route.points);
+      var xmin = $List.minimum(xvals);
+      var _p6 = xmin;
+      if (_p6.ctor === "Nothing") {
+            return 0;
+         } else {
+            return _p6._0;
+         }
+   };
+   var getMaxRouteX = function (route) {
+      var xvals = A2($List.map,
+      function (p) {
+         return p.x;
+      },
+      route.points);
+      var xmax = $List.maximum(xvals);
+      var _p7 = xmax;
+      if (_p7.ctor === "Nothing") {
+            return 0;
+         } else {
+            return _p7._0;
+         }
+   };
+   var getRouteXBounds = function (routes) {
+      var minX = $List.minimum(A2($List.map,
+      function (r) {
+         return getMinRouteX(r);
+      },
+      routes));
+      var maxX = $List.maximum(A2($List.map,
+      function (r) {
+         return getMaxRouteX(r);
+      },
+      routes));
+      return {ctor: "_Tuple2"
+             ,_0: getValueForBound(minX)
+             ,_1: getValueForBound(maxX)};
+   };
+   var toWestLongitude = function (g) {
+      return {latDeg: g.latDeg,lonDeg: 0 - g.lonDeg};
+   };
+   var toXYPoint = F2(function (p1,p2) {
+      var _p8 = A2($GeoUtils.getEastNorthOffsetNmiBetween,p1,p2);
+      var deast = _p8._0;
+      var dnorth = _p8._1;
+      return {x: deast,y: dnorth};
+   });
    var getMapDisplayHeight = 600;
    var getMapDisplayWidth = 600;
    var getMapDisplayViewBox = A2($Basics._op["++"],
@@ -12628,11 +12828,11 @@ Elm.Main.make = function (_elm) {
       _U.list([]))]);
    };
    var getCountValue = function (maybeValue) {
-      var _p2 = maybeValue;
-      if (_p2.ctor === "Nothing") {
+      var _p9 = maybeValue;
+      if (_p9.ctor === "Nothing") {
             return 0;
          } else {
-            return _p2._0;
+            return _p9._0;
          }
    };
    var getMaxCountForResource = function (resourceCount) {
@@ -12643,11 +12843,11 @@ Elm.Main.make = function (_elm) {
       resourceCount.counts)))));
    };
    var getResourceCountsValue = function (maybeResourceCounts) {
-      var _p3 = maybeResourceCounts;
-      if (_p3.ctor === "Nothing") {
+      var _p10 = maybeResourceCounts;
+      if (_p10.ctor === "Nothing") {
             return 0;
          } else {
-            return getMaxCountForResource(_p3._0);
+            return getMaxCountForResource(_p10._0);
          }
    };
    var getMaxCountValueForResource = F2(function (resource,
@@ -12676,19 +12876,19 @@ Elm.Main.make = function (_elm) {
       0.5) > 0 ? "#FF00FF" : "#FFFFFF";
    });
    var getBoundValue = function (maybeValue) {
-      var _p4 = maybeValue;
-      if (_p4.ctor === "Nothing") {
+      var _p11 = maybeValue;
+      if (_p11.ctor === "Nothing") {
             return 0;
          } else {
-            return _p4._0;
+            return _p11._0;
          }
    };
    var getYCoordValue = function (maybeCoord) {
-      var _p5 = maybeCoord;
-      if (_p5.ctor === "Nothing") {
+      var _p12 = maybeCoord;
+      if (_p12.ctor === "Nothing") {
             return 0;
          } else {
-            return _p5._0.y;
+            return _p12._0.y;
          }
    };
    var getMinYCoord = function (resource) {
@@ -12725,11 +12925,11 @@ Elm.Main.make = function (_elm) {
       return {ctor: "_Tuple2",_0: minY,_1: maxY};
    };
    var getXCoordValue = function (maybeCoord) {
-      var _p6 = maybeCoord;
-      if (_p6.ctor === "Nothing") {
+      var _p13 = maybeCoord;
+      if (_p13.ctor === "Nothing") {
             return 0;
          } else {
-            return _p6._0.x;
+            return _p13._0.x;
          }
    };
    var getMinXCoord = function (resource) {
@@ -12766,11 +12966,11 @@ Elm.Main.make = function (_elm) {
       return {ctor: "_Tuple2",_0: minX,_1: maxX};
    };
    var getMaxValueOrDefault = function (maybeMax) {
-      var _p7 = maybeMax;
-      if (_p7.ctor === "Nothing") {
+      var _p14 = maybeMax;
+      if (_p14.ctor === "Nothing") {
             return 200;
          } else {
-            return _p7._0;
+            return _p14._0;
          }
    };
    var getXVals = function (coords) {
@@ -12816,12 +13016,12 @@ Elm.Main.make = function (_elm) {
       _U.list([]));
    });
    var toSvgPolygons = function (resources) {
-      var _p8 = getYBounds(resources);
-      var minY = _p8._0;
-      var maxY = _p8._1;
-      var _p9 = getXBounds(resources);
-      var minX = _p9._0;
-      var maxX = _p9._1;
+      var _p15 = getYBounds(resources);
+      var minY = _p15._0;
+      var maxY = _p15._1;
+      var _p16 = getXBounds(resources);
+      var minX = _p16._0;
+      var maxX = _p16._1;
       return A2($List.map,
       function (r) {
          return A5(toSvgPolygon,r,minX,maxX,minY,maxY);
@@ -12849,12 +13049,12 @@ Elm.Main.make = function (_elm) {
    });
    var toSvgPolygonsColoredByCount = F2(function (resources,
    resourceCounts) {
-      var _p10 = getYBounds(resources);
-      var minY = _p10._0;
-      var maxY = _p10._1;
-      var _p11 = getXBounds(resources);
-      var minX = _p11._0;
-      var maxX = _p11._1;
+      var _p17 = getYBounds(resources);
+      var minY = _p17._0;
+      var maxY = _p17._1;
+      var _p18 = getXBounds(resources);
+      var minX = _p18._0;
+      var maxX = _p18._1;
       return A2($List.map,
       function (r) {
          return A6(toSvgPolygonColoredByCount,
@@ -12868,16 +13068,16 @@ Elm.Main.make = function (_elm) {
       resources);
    });
    var toSvgPolygonsOrNothing = function (model) {
-      var _p12 = model.resources;
-      if (_p12.ctor === "Nothing") {
+      var _p19 = model.resources;
+      if (_p19.ctor === "Nothing") {
             return _U.list([]);
          } else {
-            var _p14 = _p12._0;
-            var _p13 = model.resourceCounts;
-            if (_p13.ctor === "Nothing") {
-                  return toSvgPolygons(_p14);
+            var _p21 = _p19._0;
+            var _p20 = model.resourceCounts;
+            if (_p20.ctor === "Nothing") {
+                  return toSvgPolygons(_p21);
                } else {
-                  return A2(toSvgPolygonsColoredByCount,_p14,_p13._0);
+                  return A2(toSvgPolygonsColoredByCount,_p21,_p20._0);
                }
          }
    };
@@ -12912,9 +13112,103 @@ Elm.Main.make = function (_elm) {
       _U.list([])),
       toSvgPolygonsOrNothing(model)))]));
    };
+   var toPolyline = F5(function (route,minX,maxX,minY,maxY) {
+      var refPoint = {latDeg: 33.637,lonDeg: 84.2567};
+      var xypoints = A2($List.map,
+      function (g) {
+         return A2(toXYPoint,refPoint,toWestLongitude(g));
+      },
+      route.points);
+      var pointString = $String.concat(A2($List.map,
+      function (p) {
+         return A2($Basics._op["++"],
+         A3(toDisplayX,p.x,minX,maxX),
+         A2($Basics._op["++"],
+         ",",
+         A2($Basics._op["++"],A3(toDisplayY,p.y,minY,maxY)," ")));
+      },
+      xypoints));
+      return A2($Svg.polyline,
+      _U.list([$Svg$Attributes.points(pointString)
+              ,$Svg$Attributes.stroke("blue")
+              ,$Svg$Attributes.fill("none")]),
+      _U.list([]));
+   });
+   var toPolylines = function (model) {
+      var _p22 = model.routes;
+      if (_p22.ctor === "Nothing") {
+            return _U.list([A2($Svg.line,
+            _U.list([$Svg$Attributes.x1("-200")
+                    ,$Svg$Attributes.x2("0")
+                    ,$Svg$Attributes.y1("50")
+                    ,$Svg$Attributes.y2("25")
+                    ,$Svg$Attributes.stroke("black")]),
+            _U.list([]))]);
+         } else {
+            var _p29 = _p22._0;
+            var _p23 = model.resources;
+            if (_p23.ctor === "Nothing") {
+                  var _p24 = {ctor: "_Tuple2",_0: -1000,_1: 1000};
+                  var minY = _p24._0;
+                  var maxY = _p24._1;
+                  var _p25 = {ctor: "_Tuple2",_0: -1000,_1: 1000};
+                  var minX = _p25._0;
+                  var maxX = _p25._1;
+                  return A2($List.map,
+                  function (r) {
+                     return A5(toPolyline,r,minX,maxX,minY,maxY);
+                  },
+                  _p29);
+               } else {
+                  var _p28 = _p23._0;
+                  var _p26 = getYBounds(_p28);
+                  var minY = _p26._0;
+                  var maxY = _p26._1;
+                  var _p27 = getXBounds(_p28);
+                  var minX = _p27._0;
+                  var maxX = _p27._1;
+                  return A2($List.map,
+                  function (r) {
+                     return A5(toPolyline,r,minX,maxX,minY,maxY);
+                  },
+                  _p29);
+               }
+         }
+   };
+   var displayRoutes = function (model) {
+      return A2($Svg.svg,
+      _U.list([$Svg$Attributes.width($Basics.toString(getMapDisplayWidth))
+              ,$Svg$Attributes.height($Basics.toString(getMapDisplayHeight))
+              ,$Svg$Attributes.viewBox(getMapDisplayViewBox)
+              ,$Svg$Attributes.fill("#333333")
+              ,$Svg$Attributes.style("margin-left:auto; margin-right:auto; display:block;")]),
+      _U.list([A2($Svg.g,
+      _U.list([$Svg$Attributes.transform(A2($Basics._op["++"],
+      "translate(",
+      A2($Basics._op["++"],
+      $Basics.toString(getMapDisplayWidth / 2),
+      A2($Basics._op["++"],
+      ", ",
+      A2($Basics._op["++"],
+      $Basics.toString(getMapDisplayHeight / 2),
+      ")")))))]),
+      A2($List._op["::"],
+      A2($Svg.rect,
+      _U.list([$Svg$Attributes.x(A2($Basics._op["++"],
+              "-",
+              $Basics.toString(getMapDisplayWidth / 2)))
+              ,$Svg$Attributes.y(A2($Basics._op["++"],
+              "-",
+              $Basics.toString(getMapDisplayHeight / 2)))
+              ,$Svg$Attributes.width($Basics.toString(getMapDisplayWidth))
+              ,$Svg$Attributes.height($Basics.toString(getMapDisplayHeight))
+              ,$Svg$Attributes.style("fill:#FFFFFF;stroke:#222222")]),
+      _U.list([])),
+      toPolylines(model)))]));
+   };
    var toStringList = function (maybeResource) {
-      var _p15 = maybeResource;
-      if (_p15.ctor === "Nothing") {
+      var _p30 = maybeResource;
+      if (_p30.ctor === "Nothing") {
             return _U.list([]);
          } else {
             return A2($List.map,
@@ -12923,15 +13217,15 @@ Elm.Main.make = function (_elm) {
                $Basics.toString(c.x),
                A2($Basics._op["++"],",",$Basics.toString(c.y)));
             },
-            _p15._0.coords);
+            _p30._0.coords);
          }
    };
    var getNth = F2(function (n,maybeResources) {
-      var _p16 = maybeResources;
-      if (_p16.ctor === "Nothing") {
+      var _p31 = maybeResources;
+      if (_p31.ctor === "Nothing") {
             return $Maybe.Nothing;
          } else {
-            return $List.head(A2($List.drop,n,_p16._0));
+            return $List.head(A2($List.drop,n,_p31._0));
          }
    });
    var toDisplayCount = function (c) {
@@ -12941,17 +13235,17 @@ Elm.Main.make = function (_elm) {
       return _U.eq(A2($Basics._op["%"],x,60),0) ? "4" : "2";
    };
    var interleave = F2(function (list1,list2) {
-      var _p17 = list1;
-      if (_p17.ctor === "[]") {
+      var _p32 = list1;
+      if (_p32.ctor === "[]") {
             return list2;
          } else {
-            var _p18 = list2;
-            if (_p18.ctor === "[]") {
+            var _p33 = list2;
+            if (_p33.ctor === "[]") {
                   return list1;
                } else {
                   return A2($List._op["::"],
-                  _p18._0,
-                  A2($List._op["::"],_p17._0,A2(interleave,_p17._1,_p18._1)));
+                  _p33._0,
+                  A2($List._op["::"],_p32._0,A2(interleave,_p32._1,_p33._1)));
                }
          }
    });
@@ -12970,11 +13264,16 @@ Elm.Main.make = function (_elm) {
       resourceCount.counts);
    };
    var init = {ctor: "_Tuple2"
-              ,_0: {resources: $Maybe.Nothing,resourceCounts: $Maybe.Nothing}
+              ,_0: {resources: $Maybe.Nothing
+                   ,resourceCounts: $Maybe.Nothing
+                   ,routes: $Maybe.Nothing}
               ,_1: $Effects.none};
-   var Model = F2(function (a,b) {
-      return {resources: a,resourceCounts: b};
+   var Model = F3(function (a,b,c) {
+      return {resources: a,resourceCounts: b,routes: c};
    });
+   var ShowRoutes = function (a) {
+      return {ctor: "ShowRoutes",_0: a};
+   };
    var ShowResourceCounts = function (a) {
       return {ctor: "ShowResourceCounts",_0: a};
    };
@@ -12983,6 +13282,7 @@ Elm.Main.make = function (_elm) {
    };
    var GetResourceCounts = {ctor: "GetResourceCounts"};
    var GetResources = {ctor: "GetResources"};
+   var GetRoutes = {ctor: "GetRoutes"};
    var NoOp = {ctor: "NoOp"};
    var getDisplayTimeOrigin = 200;
    var createLabelForResourceCount = function (resourceCount) {
@@ -13035,8 +13335,8 @@ Elm.Main.make = function (_elm) {
       stairs(resourceCount)));
    };
    var createSparkLineForResource = function (maybeResourceCount) {
-      var _p19 = maybeResourceCount;
-      if (_p19.ctor === "Nothing") {
+      var _p34 = maybeResourceCount;
+      if (_p34.ctor === "Nothing") {
             return A2($Svg.line,
             _U.list([$Svg$Attributes.x1("-200")
                     ,$Svg$Attributes.x2("0")
@@ -13046,7 +13346,7 @@ Elm.Main.make = function (_elm) {
             _U.list([]));
          } else {
             return A2($Svg.polyline,
-            _U.list([$Svg$Attributes.points(toXYPointString(_p19._0))
+            _U.list([$Svg$Attributes.points(toXYPointString(_p34._0))
                     ,$Svg$Attributes.stroke("blue")
                     ,$Svg$Attributes.fill("none")]),
             _U.list([]));
@@ -13087,15 +13387,15 @@ Elm.Main.make = function (_elm) {
       createTicks)))]));
    };
    var toSvgs = function (maybeResourceCounts) {
-      var _p20 = maybeResourceCounts;
-      if (_p20.ctor === "Nothing") {
+      var _p35 = maybeResourceCounts;
+      if (_p35.ctor === "Nothing") {
             return _U.list([]);
          } else {
             return A2($List.map,
             function (r) {
                return createCountSvg(r);
             },
-            _p20._0);
+            _p35._0);
          }
    };
    var view = F2(function (address,model) {
@@ -13108,13 +13408,24 @@ Elm.Main.make = function (_elm) {
               ,A2($Html.button,
               _U.list([A2($Html$Events.onClick,address,GetResourceCounts)]),
               _U.list([$Html.text("Click to get resource counts!")]))
+              ,A2($Html.button,
+              _U.list([A2($Html$Events.onClick,address,GetRoutes)]),
+              _U.list([$Html.text("Click to get routes!")]))
               ,A2($Html.br,_U.list([]),_U.list([]))
               ,displayResources(model)
-              ,viewResourceCounts(model.resourceCounts)]),
+              ,displayRoutes(model)
+              ,viewResourceCounts(model.resourceCounts)
+              ,viewRoutes(model.routes)]),
       A2($List.intersperse,
       A2($Html.br,_U.list([]),_U.list([])),
       toSvgs(model.resourceCounts))));
    });
+   var routesUrl = "./routes1.json";
+   var getRoutes = $Effects.task(A2($Task.map,
+   ShowRoutes,
+   toMaybeWithLogging(A2($Http.get,
+   routeCollectionDecoder,
+   routesUrl))));
    var resourceCountsUrl = "./resource-counts.json";
    var getResourceCounts = $Effects.task(A2($Task.map,
    ShowResourceCounts,
@@ -13126,11 +13437,14 @@ Elm.Main.make = function (_elm) {
    ShowResources,
    $Task.toMaybe(A2($Http.get,decoderColl,resourcesUrl))));
    var update = F2(function (action,model) {
-      var _p21 = action;
-      switch (_p21.ctor)
+      var _p36 = action;
+      switch (_p36.ctor)
       {case "NoOp": return {ctor: "_Tuple2"
                            ,_0: model
                            ,_1: $Effects.none};
+         case "GetRoutes": return {ctor: "_Tuple2"
+                                  ,_0: _U.update(model,{routes: $Maybe.Nothing})
+                                  ,_1: getRoutes};
          case "GetResources": return {ctor: "_Tuple2"
                                      ,_0: _U.update(model,{resources: $Maybe.Nothing})
                                      ,_1: getResources};
@@ -13138,10 +13452,13 @@ Elm.Main.make = function (_elm) {
                                           ,_0: _U.update(model,{resourceCounts: $Maybe.Nothing})
                                           ,_1: getResourceCounts};
          case "ShowResources": return {ctor: "_Tuple2"
-                                      ,_0: _U.update(model,{resources: _p21._0})
+                                      ,_0: _U.update(model,{resources: _p36._0})
                                       ,_1: $Effects.none};
+         case "ShowResourceCounts": return {ctor: "_Tuple2"
+                                           ,_0: _U.update(model,{resourceCounts: _p36._0})
+                                           ,_1: $Effects.none};
          default: return {ctor: "_Tuple2"
-                         ,_0: _U.update(model,{resourceCounts: _p21._0})
+                         ,_0: _U.update(model,{routes: _p36._0})
                          ,_1: $Effects.none};}
    });
    var app = $StartApp.start({init: init
@@ -13151,90 +13468,111 @@ Elm.Main.make = function (_elm) {
    var main = app.html;
    var tasks = Elm.Native.Task.make(_elm).performSignal("tasks",
    app.tasks);
-   return _elm.Main.values = {_op: _op
-                             ,resourcesUrl: resourcesUrl
-                             ,resourceCountsUrl: resourceCountsUrl
-                             ,getTimeOrigin: getTimeOrigin
-                             ,getDisplayTimeOrigin: getDisplayTimeOrigin
-                             ,app: app
-                             ,main: main
-                             ,NoOp: NoOp
-                             ,GetResources: GetResources
-                             ,GetResourceCounts: GetResourceCounts
-                             ,ShowResources: ShowResources
-                             ,ShowResourceCounts: ShowResourceCounts
-                             ,Model: Model
-                             ,init: init
-                             ,update: update
-                             ,createLabelForResourceCount: createLabelForResourceCount
-                             ,createCountSvg: createCountSvg
-                             ,combine: combine
-                             ,steps: steps
-                             ,stairs: stairs
-                             ,interleave: interleave
-                             ,toSvgs: toSvgs
-                             ,view: view
-                             ,getTickHeight: getTickHeight
-                             ,createTicks: createTicks
-                             ,createTickLabels: createTickLabels
-                             ,toDisplayTime: toDisplayTime
-                             ,toDisplayCount: toDisplayCount
-                             ,toXYPointString: toXYPointString
-                             ,createSparkLineForResource: createSparkLineForResource
-                             ,createSparkLineForResourceCount: createSparkLineForResourceCount
-                             ,getNth: getNth
-                             ,toStringList: toStringList
-                             ,getXScaleFactor: getXScaleFactor
-                             ,getYScaleFactor: getYScaleFactor
-                             ,toDisplayX: toDisplayX
-                             ,toDisplayY: toDisplayY
-                             ,getXVals: getXVals
-                             ,getMaxX: getMaxX
-                             ,getMaxValueOrDefault: getMaxValueOrDefault
-                             ,toPointString: toPointString
-                             ,toSvgPolygon: toSvgPolygon
-                             ,toSvgPolygonColoredByCount: toSvgPolygonColoredByCount
-                             ,getXCoordValue: getXCoordValue
-                             ,getMinXCoord: getMinXCoord
-                             ,getMaxXCoord: getMaxXCoord
-                             ,getMaxXCoords: getMaxXCoords
-                             ,getMinXCoords: getMinXCoords
-                             ,getYCoordValue: getYCoordValue
-                             ,getMinYCoord: getMinYCoord
-                             ,getMaxYCoord: getMaxYCoord
-                             ,getMaxYCoords: getMaxYCoords
-                             ,getMinYCoords: getMinYCoords
-                             ,getBoundValue: getBoundValue
-                             ,getXBounds: getXBounds
-                             ,getYBounds: getYBounds
-                             ,toSvgPolygons: toSvgPolygons
-                             ,getCountValue: getCountValue
-                             ,getMaxCountForResource: getMaxCountForResource
-                             ,getMaxCount: getMaxCount
-                             ,getResourceCountsValue: getResourceCountsValue
-                             ,getMaxCountValueForResource: getMaxCountValueForResource
-                             ,getColorForResource: getColorForResource
-                             ,toSvgPolygonsColoredByCount: toSvgPolygonsColoredByCount
-                             ,toPolygons: toPolygons
-                             ,toSvgPolygonsOrNothing: toSvgPolygonsOrNothing
-                             ,getMapDisplayWidth: getMapDisplayWidth
-                             ,getMapDisplayHeight: getMapDisplayHeight
-                             ,getMapDisplayViewBox: getMapDisplayViewBox
-                             ,displayResources: displayResources
-                             ,viewCoords: viewCoords
-                             ,viewResourceCounts: viewResourceCounts
-                             ,viewResources: viewResources
-                             ,getResourceCounts: getResourceCounts
-                             ,getResources: getResources
-                             ,toMaybeWithLogging: toMaybeWithLogging
-                             ,Coord: Coord
-                             ,Resource: Resource
-                             ,decoder: decoder
-                             ,coordDecoder: coordDecoder
-                             ,decoderColl: decoderColl
-                             ,TimedCount: TimedCount
-                             ,ResourceCount: ResourceCount
-                             ,countDecoderColl: countDecoderColl
-                             ,resourceCountDecoder: resourceCountDecoder
-                             ,timedCountDecoder: timedCountDecoder};
+   return _elm.ResourceDecoder.values = {_op: _op
+                                        ,resourcesUrl: resourcesUrl
+                                        ,resourceCountsUrl: resourceCountsUrl
+                                        ,routesUrl: routesUrl
+                                        ,getTimeOrigin: getTimeOrigin
+                                        ,getDisplayTimeOrigin: getDisplayTimeOrigin
+                                        ,app: app
+                                        ,main: main
+                                        ,NoOp: NoOp
+                                        ,GetRoutes: GetRoutes
+                                        ,GetResources: GetResources
+                                        ,GetResourceCounts: GetResourceCounts
+                                        ,ShowResources: ShowResources
+                                        ,ShowResourceCounts: ShowResourceCounts
+                                        ,ShowRoutes: ShowRoutes
+                                        ,Model: Model
+                                        ,init: init
+                                        ,update: update
+                                        ,createLabelForResourceCount: createLabelForResourceCount
+                                        ,createCountSvg: createCountSvg
+                                        ,combine: combine
+                                        ,steps: steps
+                                        ,stairs: stairs
+                                        ,interleave: interleave
+                                        ,toSvgs: toSvgs
+                                        ,view: view
+                                        ,getTickHeight: getTickHeight
+                                        ,createTicks: createTicks
+                                        ,createTickLabels: createTickLabels
+                                        ,toDisplayTime: toDisplayTime
+                                        ,toDisplayCount: toDisplayCount
+                                        ,toXYPointString: toXYPointString
+                                        ,createSparkLineForResource: createSparkLineForResource
+                                        ,createSparkLineForResourceCount: createSparkLineForResourceCount
+                                        ,getNth: getNth
+                                        ,toStringList: toStringList
+                                        ,getXScaleFactor: getXScaleFactor
+                                        ,getYScaleFactor: getYScaleFactor
+                                        ,toDisplayX: toDisplayX
+                                        ,toDisplayY: toDisplayY
+                                        ,getXVals: getXVals
+                                        ,getMaxX: getMaxX
+                                        ,getMaxValueOrDefault: getMaxValueOrDefault
+                                        ,toPointString: toPointString
+                                        ,toSvgPolygon: toSvgPolygon
+                                        ,toSvgPolygonColoredByCount: toSvgPolygonColoredByCount
+                                        ,getXCoordValue: getXCoordValue
+                                        ,getMinXCoord: getMinXCoord
+                                        ,getMaxXCoord: getMaxXCoord
+                                        ,getMaxXCoords: getMaxXCoords
+                                        ,getMinXCoords: getMinXCoords
+                                        ,getYCoordValue: getYCoordValue
+                                        ,getMinYCoord: getMinYCoord
+                                        ,getMaxYCoord: getMaxYCoord
+                                        ,getMaxYCoords: getMaxYCoords
+                                        ,getMinYCoords: getMinYCoords
+                                        ,getBoundValue: getBoundValue
+                                        ,getXBounds: getXBounds
+                                        ,getYBounds: getYBounds
+                                        ,toSvgPolygons: toSvgPolygons
+                                        ,getCountValue: getCountValue
+                                        ,getMaxCountForResource: getMaxCountForResource
+                                        ,getMaxCount: getMaxCount
+                                        ,getResourceCountsValue: getResourceCountsValue
+                                        ,getMaxCountValueForResource: getMaxCountValueForResource
+                                        ,getColorForResource: getColorForResource
+                                        ,toSvgPolygonsColoredByCount: toSvgPolygonsColoredByCount
+                                        ,toPolygons: toPolygons
+                                        ,toSvgPolygonsOrNothing: toSvgPolygonsOrNothing
+                                        ,getMapDisplayWidth: getMapDisplayWidth
+                                        ,getMapDisplayHeight: getMapDisplayHeight
+                                        ,getMapDisplayViewBox: getMapDisplayViewBox
+                                        ,toXYPoint: toXYPoint
+                                        ,toWestLongitude: toWestLongitude
+                                        ,toPolyline: toPolyline
+                                        ,getMaxRouteX: getMaxRouteX
+                                        ,getMinRouteX: getMinRouteX
+                                        ,getRouteXBounds: getRouteXBounds
+                                        ,getValueForBound: getValueForBound
+                                        ,getRouteYBounds: getRouteYBounds
+                                        ,getMaxRouteY: getMaxRouteY
+                                        ,getMinRouteY: getMinRouteY
+                                        ,toPolylines: toPolylines
+                                        ,displayRoutes: displayRoutes
+                                        ,displayResources: displayResources
+                                        ,viewCoords: viewCoords
+                                        ,viewRoutes: viewRoutes
+                                        ,viewResourceCounts: viewResourceCounts
+                                        ,viewResources: viewResources
+                                        ,getRoutes: getRoutes
+                                        ,getResourceCounts: getResourceCounts
+                                        ,getResources: getResources
+                                        ,toMaybeWithLogging: toMaybeWithLogging
+                                        ,Coord: Coord
+                                        ,Resource: Resource
+                                        ,decoder: decoder
+                                        ,coordDecoder: coordDecoder
+                                        ,decoderColl: decoderColl
+                                        ,TimedCount: TimedCount
+                                        ,ResourceCount: ResourceCount
+                                        ,countDecoderColl: countDecoderColl
+                                        ,resourceCountDecoder: resourceCountDecoder
+                                        ,timedCountDecoder: timedCountDecoder
+                                        ,Route: Route
+                                        ,routeCollectionDecoder: routeCollectionDecoder
+                                        ,routeDecoder: routeDecoder
+                                        ,geoPointDecoder: geoPointDecoder};
 };

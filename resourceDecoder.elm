@@ -1,3 +1,4 @@
+module ResourceDecoder where
 import Http
 import String as String
 import StartApp
@@ -11,8 +12,11 @@ import Svg exposing (svg, rect, polygon, circle, polyline, g)
 import Svg.Attributes exposing (..)
 import Array
 
+import GeoUtils exposing (..)
+
 resourcesUrl = "./resources.json"
 resourceCountsUrl = "./resource-counts.json"
+routesUrl = "./routes1.json"
 
 getTimeOrigin =
   0
@@ -34,23 +38,29 @@ port tasks =
 
 type Action
   = NoOp
+  | GetRoutes
   | GetResources
   | GetResourceCounts
   | ShowResources (Maybe Resources)
   | ShowResourceCounts (Maybe ResourceCounts)
+  | ShowRoutes (Maybe Routes)
 
 type alias Model =
   { resources : Maybe Resources
-   ,resourceCounts : Maybe ResourceCounts}
+   ,resourceCounts : Maybe ResourceCounts
+   ,routes : Maybe Routes}
 
 init =
   ({ resources = Nothing
-    ,resourceCounts = Nothing }, Effects.none)
+    ,resourceCounts = Nothing
+    ,routes = Nothing }, Effects.none)
 
 update action model =
   case action of
     NoOp ->
       (model, Effects.none)
+    GetRoutes ->
+      ({ model | routes = Nothing }, getRoutes)
     GetResources ->
       ({ model | resources = Nothing }, getResources)
     GetResourceCounts ->
@@ -59,6 +69,8 @@ update action model =
       ({ model | resources = maybeResources }, Effects.none)
     ShowResourceCounts maybeResourceCounts ->
       ({ model | resourceCounts = maybeResourceCounts }, Effects.none)
+    ShowRoutes maybeRoutes ->
+      ({ model | routes = maybeRoutes }, Effects.none)
 
 createLabelForResourceCount resourceCount =
   Svg.text' [x (toString (getDisplayTimeOrigin-400)), y "-80"][text resourceCount.id]
@@ -128,9 +140,12 @@ view address model =
     (List.append 
     [ button [ onClick address GetResources ] [ text "Click to get resources!" ]
     , button [ onClick address GetResourceCounts ] [ text "Click to get resource counts!" ]
+    , button [ onClick address GetRoutes ] [ text "Click to get routes!" ]
     , br [][]
     , displayResources model
+    , displayRoutes model
     , viewResourceCounts model.resourceCounts
+    , viewRoutes model.routes
     ] (List.intersperse (br [][]) (toSvgs model.resourceCounts)))
 
 
@@ -361,6 +376,126 @@ getMapDisplayHeight =
 getMapDisplayViewBox =
   "0 0 " ++ (toString getMapDisplayWidth) ++ " " ++ (toString getMapDisplayHeight)
 
+-- leverage GeoUtils function
+toXYPoint p1 p2 =
+  let 
+    (deast,dnorth) = getEastNorthOffsetNmiBetween p1 p2
+  in
+    {x = deast,
+     y = dnorth
+    }
+
+toWestLongitude g =
+  {latDeg = g.latDeg,
+   lonDeg = -g.lonDeg
+  }
+
+toPolyline route minX maxX minY maxY =
+  let
+    refPoint = {latDeg=33.637, lonDeg=84.2567}
+    xypoints = List.map (\g -> toXYPoint refPoint (toWestLongitude g)) route.points 
+    pointString = String.concat (List.map (\p -> ((toDisplayX p.x minX maxX) ++ "," ++ (toDisplayY p.y minY maxY) ++ " ")) xypoints)
+  in
+    polyline [points pointString, stroke "blue", fill "none"][]
+
+
+getMaxRouteX route =
+  let
+    xvals = List.map (\p -> p.x) route.points
+    xmax = List.maximum xvals
+  in
+    case xmax of 
+      Nothing ->
+        0
+      Just xmax ->
+        xmax
+    
+
+getMinRouteX route =
+  let
+    xvals = List.map (\p -> p.x) route.points
+    xmin = List.minimum xvals
+  in
+    case xmin of 
+      Nothing ->
+        0
+      Just xmin ->
+        xmin
+
+
+
+getRouteXBounds routes = 
+  let 
+    maxX = List.maximum (List.map (\r -> getMaxRouteX r) routes)
+    minX = List.minimum (List.map (\r -> getMinRouteX r) routes)
+  in
+    ((getValueForBound minX), (getValueForBound maxX)) 
+
+getValueForBound maybeValue =
+   case maybeValue of
+     Nothing ->
+       0
+     Just value ->
+       value
+
+getRouteYBounds routes = 
+  let 
+    maxY = List.maximum (List.map (\r -> getMaxRouteY r) routes)
+    minY = List.minimum (List.map (\r -> getMinRouteY r) routes)
+  in
+    ((getValueForBound minY), (getValueForBound maxY))
+
+getMaxRouteY route =
+  let
+    yvals = List.map (\p -> p.y) route.points
+    ymax = List.maximum yvals
+  in
+    case ymax of
+      Nothing -> 
+        0
+      Just ymax ->
+        ymax
+
+getMinRouteY route =
+  let
+    yvals = List.map (\p -> p.y) route.points
+    ymin = List.minimum yvals
+  in
+    case ymin of
+      Nothing -> 
+        0
+      Just ymin ->
+        ymin
+
+toPolylines model =
+  case model.routes of
+    Nothing ->
+      [Svg.line [x1 "-200", x2 "0", y1 "50", y2 "25", stroke "black"][]]
+    Just routes ->
+      case model.resources of
+        Nothing ->
+          let 
+            (minX,maxX) = (-1000,1000)
+            (minY,maxY) = (-1000,1000)
+          in
+            List.map (\r -> toPolyline r minX maxX minY maxY) routes  
+        Just resources ->
+          let
+            (minX,maxX) = getXBounds resources
+            (minY,maxY) = getYBounds resources
+          in
+            List.map (\r -> toPolyline r minX maxX minY maxY) routes  
+
+displayRoutes model =
+  Svg.svg [ width (toString getMapDisplayWidth), 
+            height (toString getMapDisplayHeight), 
+            viewBox getMapDisplayViewBox, 
+            fill "#333333", style "margin-left:auto; margin-right:auto; display:block;" ]
+    [g [ transform (("translate(" ++ (toString (getMapDisplayWidth/2)) ++ ", " ++ (toString (getMapDisplayHeight/2)) ++ ")")) ]
+    ((Svg.rect [x ("-" ++ (toString (getMapDisplayWidth/2))), y ("-" ++ (toString (getMapDisplayHeight/2))), width (toString getMapDisplayWidth), height (toString getMapDisplayHeight), style "fill:#FFFFFF;stroke:#222222"][]) ::
+    (toPolylines model))
+    ]
+
 displayResources model = 
   Svg.svg [ width (toString getMapDisplayWidth), 
             height (toString getMapDisplayHeight), 
@@ -374,6 +509,13 @@ displayResources model =
 viewCoords coords = 
   List.map (\c -> toString c.x) coords
 
+viewRoutes maybeRoutes =
+  case maybeRoutes of
+    Nothing ->
+      div [] [ text "No routes to display.  Try clicking the button" ]
+    Just routes ->
+      div [] [ text ("Got " ++ (toString (List.length routes)) ++ " routes, baby!") ]
+    
 viewResourceCounts maybeResourceCounts = 
   case maybeResourceCounts of
     Nothing ->
@@ -393,6 +535,14 @@ viewResources maybeResources =
         div [] [ text "No resources to display. Try clicking the button" ]
       Just resources ->
         ul [] (List.map viewResource resources)
+
+
+getRoutes : Effects Action
+getRoutes =
+  Http.get routeCollectionDecoder routesUrl
+    |> toMaybeWithLogging
+    |> Task.map ShowRoutes
+    |> Effects.task
 
 getResourceCounts : Effects Action
 getResourceCounts = 
@@ -473,3 +623,27 @@ timedCountDecoder =
   Decode.object2 TimedCount
     ("t" := Decode.int)
     ("count" := Decode.int)
+
+type alias Routes = List Route
+
+type alias Route = {
+  id : String
+ ,points: List GeoPoint2D
+}
+ 
+routeCollectionDecoder : Decoder Routes
+routeCollectionDecoder = 
+  Decode.object1 identity
+    ("routes" := Decode.list routeDecoder)
+
+routeDecoder : Decoder Route
+routeDecoder =
+  Decode.object2 Route
+    ("id" := Decode.string)
+    ("points" := Decode.list geoPointDecoder)
+
+geoPointDecoder : Decoder GeoPoint2D
+geoPointDecoder = 
+  Decode.object2 GeoPoint2D
+    ("latDeg" := Decode.float)
+    ("lonDeg" := Decode.float)
