@@ -83,10 +83,22 @@ update action model =
 createLabelForResourceCount resourceCount =
   Svg.text' [x (toString (getDisplayTimeOrigin-400)), y "-80"][text resourceCount.id]
 
+createBorder =
+  (Svg.rect [x ("-" ++ (toString getDisplayTimeOrigin))
+                   ,y "-100"
+                   , width "400"
+                   , height "200"
+                   , style "fill:#FFFFFF;stroke:#222222"][])
+
 createCountSvg resourceCount refTime = 
       Svg.svg [ width "400", height "200", viewBox "0 0 400 200", style "margin-left:auto; margin-right:auto; display:block;"]
       [g [ transform (("translate(" ++ (toString getDisplayTimeOrigin) ++", 100)"))]
-      (List.append [(Svg.rect [x ("-" ++ (toString getDisplayTimeOrigin)), y "-100", width "400", height "200", style "fill:#FFFFFF;stroke:#222222"][])] (List.append [(createLabelForResourceCount resourceCount),(createSparkLineForResourceCount resourceCount refTime)]  createTicks))
+      (List.append 
+        [(createBorder)
+        ,(createLabelForResourceCount resourceCount)
+        ,(createSparkLineForResourceCount resourceCount refTime)
+        ]  
+        createTicks)
       ]
 
 {-
@@ -156,6 +168,7 @@ view address model =
     , viewRoutes model.routes
     , button [ onClick address (ShiftTimeForward (model.currentTime + 15)) ] [ text "+15" ]
     , button [ onClick address (ShiftTimeBackward (model.currentTime - 15)) ] [ text "-15" ]
+    , text ("current Time: " ++ (toString model.currentTime))
     ] (List.intersperse (br [][]) (toSvgs model.resourceCounts model.currentTime)))
 
 

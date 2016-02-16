@@ -13262,6 +13262,15 @@ Elm.ResourceDecoder.make = function (_elm) {
               ,$Svg$Attributes.y("-80")]),
       _U.list([$Html.text(resourceCount.id)]));
    };
+   var createBorder = A2($Svg.rect,
+   _U.list([$Svg$Attributes.x(A2($Basics._op["++"],
+           "-",
+           $Basics.toString(getDisplayTimeOrigin)))
+           ,$Svg$Attributes.y("-100")
+           ,$Svg$Attributes.width("400")
+           ,$Svg$Attributes.height("200")
+           ,$Svg$Attributes.style("fill:#FFFFFF;stroke:#222222")]),
+   _U.list([]));
    var getTimeOrigin = 0;
    var toDisplayTime = function (t) {
       return $Basics.toString(t - getTimeOrigin);
@@ -13349,19 +13358,10 @@ Elm.ResourceDecoder.make = function (_elm) {
       $Basics.toString(getDisplayTimeOrigin),
       ", 100)")))]),
       A2($List.append,
-      _U.list([A2($Svg.rect,
-      _U.list([$Svg$Attributes.x(A2($Basics._op["++"],
-              "-",
-              $Basics.toString(getDisplayTimeOrigin)))
-              ,$Svg$Attributes.y("-100")
-              ,$Svg$Attributes.width("400")
-              ,$Svg$Attributes.height("200")
-              ,$Svg$Attributes.style("fill:#FFFFFF;stroke:#222222")]),
-      _U.list([]))]),
-      A2($List.append,
-      _U.list([createLabelForResourceCount(resourceCount)
+      _U.list([createBorder
+              ,createLabelForResourceCount(resourceCount)
               ,A2(createSparkLineForResourceCount,resourceCount,refTime)]),
-      createTicks)))]));
+      createTicks))]));
    });
    var toSvgs = F2(function (maybeResourceCounts,refTime) {
       var _p32 = maybeResourceCounts;
@@ -13402,7 +13402,10 @@ Elm.ResourceDecoder.make = function (_elm) {
               _U.list([A2($Html$Events.onClick,
               address,
               ShiftTimeBackward(model.currentTime - 15))]),
-              _U.list([$Html.text("-15")]))]),
+              _U.list([$Html.text("-15")]))
+              ,$Html.text(A2($Basics._op["++"],
+              "current Time: ",
+              $Basics.toString(model.currentTime)))]),
       A2($List.intersperse,
       A2($Html.br,_U.list([]),_U.list([])),
       A2(toSvgs,model.resourceCounts,model.currentTime))));
@@ -13482,6 +13485,7 @@ Elm.ResourceDecoder.make = function (_elm) {
                                         ,init: init
                                         ,update: update
                                         ,createLabelForResourceCount: createLabelForResourceCount
+                                        ,createBorder: createBorder
                                         ,createCountSvg: createCountSvg
                                         ,combine: combine
                                         ,steps: steps
