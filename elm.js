@@ -12617,22 +12617,22 @@ Elm.ResourceDecoder.make = function (_elm) {
    var Resource = F2(function (a,b) {
       return {id: a,coords: b};
    });
-   var Coord = F2(function (a,b) {    return {x: a,y: b};});
-   var coordDecoder = A3($Json$Decode.object2,
-   Coord,
-   A2($Json$Decode._op[":="],"x",$Json$Decode.$float),
-   A2($Json$Decode._op[":="],"y",$Json$Decode.$float));
    var decoder = A3($Json$Decode.object2,
    Resource,
    A2($Json$Decode._op[":="],"id",$Json$Decode.string),
    A2($Json$Decode._op[":="],
    "coords",
-   $Json$Decode.list(coordDecoder)));
+   $Json$Decode.list(geoPointDecoder)));
    var decoderColl = A2($Json$Decode.object1,
    $Basics.identity,
    A2($Json$Decode._op[":="],
    "resources",
    $Json$Decode.list(decoder)));
+   var Coord = F2(function (a,b) {    return {x: a,y: b};});
+   var coordDecoder = A3($Json$Decode.object2,
+   Coord,
+   A2($Json$Decode._op[":="],"x",$Json$Decode.$float),
+   A2($Json$Decode._op[":="],"y",$Json$Decode.$float));
    var toMaybeWithLogging = function (task) {
       return A2($Task.onError,
       A2($Task.map,$Maybe.Just,task),
@@ -12645,10 +12645,12 @@ Elm.ResourceDecoder.make = function (_elm) {
    var viewResources = function (maybeResources) {
       var viewCoord = function (coord) {
          return $Html.text(A2($Basics._op["++"],
-         "x: ",
+         "latDeg: ",
          A2($Basics._op["++"],
-         $Basics.toString(coord.x),
-         A2($Basics._op["++"],", y: ",$Basics.toString(coord.y)))));
+         $Basics.toString(coord.latDeg),
+         A2($Basics._op["++"],
+         ", lonDeg: ",
+         $Basics.toString(coord.lonDeg)))));
       };
       var viewResource = function (resource) {
          return A2($Html.li,
@@ -12705,7 +12707,7 @@ Elm.ResourceDecoder.make = function (_elm) {
    var viewCoords = function (coords) {
       return A2($List.map,
       function (c) {
-         return $Basics.toString(c.x);
+         return $Basics.toString(c.latDeg);
       },
       coords);
    };
@@ -12883,101 +12885,55 @@ Elm.ResourceDecoder.make = function (_elm) {
             return _p11._0;
          }
    };
-   var getYCoordValue = function (maybeCoord) {
-      var _p12 = maybeCoord;
-      if (_p12.ctor === "Nothing") {
-            return 0;
-         } else {
-            return _p12._0.y;
-         }
-   };
-   var getMinYCoord = function (resource) {
-      return getYCoordValue($List.head(A2($List.sortBy,
-      function (_) {
-         return _.y;
+   var findXBounds = function (xypoints) {
+      var xvals = A2($List.map,
+      function (p) {
+         return p.x;
       },
-      resource.coords)));
-   };
-   var getMinYCoords = function (resources) {
-      return A2($List.map,
-      function (r) {
-         return getMinYCoord(r);
-      },
-      resources);
-   };
-   var getMaxYCoord = function (resource) {
-      return getYCoordValue($List.head($List.reverse(A2($List.sortBy,
-      function (_) {
-         return _.y;
-      },
-      resource.coords))));
-   };
-   var getMaxYCoords = function (resources) {
-      return A2($List.map,
-      function (r) {
-         return getMaxYCoord(r);
-      },
-      resources);
-   };
-   var getYBounds = function (resources) {
-      var minY = getBoundValue($List.head($List.sort(getMinYCoords(resources))));
-      var maxY = getBoundValue($List.head($List.reverse($List.sort(getMaxYCoords(resources)))));
-      return {ctor: "_Tuple2",_0: minY,_1: maxY};
-   };
-   var getXCoordValue = function (maybeCoord) {
-      var _p13 = maybeCoord;
-      if (_p13.ctor === "Nothing") {
-            return 0;
-         } else {
-            return _p13._0.x;
-         }
-   };
-   var getMinXCoord = function (resource) {
-      return getXCoordValue($List.head(A2($List.sortBy,
-      function (_) {
-         return _.x;
-      },
-      resource.coords)));
-   };
-   var getMinXCoords = function (resources) {
-      return A2($List.map,
-      function (r) {
-         return getMinXCoord(r);
-      },
-      resources);
-   };
-   var getMaxXCoord = function (resource) {
-      return getXCoordValue($List.head($List.reverse(A2($List.sortBy,
-      function (_) {
-         return _.x;
-      },
-      resource.coords))));
-   };
-   var getMaxXCoords = function (resources) {
-      return A2($List.map,
-      function (r) {
-         return getMaxXCoord(r);
-      },
-      resources);
+      xypoints);
+      var maxX = $List.maximum(xvals);
+      var minX = $List.minimum(xvals);
+      return {ctor: "_Tuple2"
+             ,_0: getBoundValue(minX)
+             ,_1: getBoundValue(maxX)};
    };
    var getXBounds = function (resources) {
-      var minX = getBoundValue($List.head($List.sort(getMinXCoords(resources))));
-      var maxX = getBoundValue($List.head($List.reverse($List.sort(getMaxXCoords(resources)))));
-      return {ctor: "_Tuple2",_0: minX,_1: maxX};
+      var refPoint = {latDeg: 33.637,lonDeg: 84.2567};
+      var xypoints = $List.concat(A2($List.map,
+      function (r) {
+         return A2($List.map,
+         function (g) {
+            return A2(toXYPoint,refPoint,toWestLongitude(g));
+         },
+         r.coords);
+      },
+      resources));
+      return findXBounds(xypoints);
    };
-   var getMaxValueOrDefault = function (maybeMax) {
-      var _p14 = maybeMax;
-      if (_p14.ctor === "Nothing") {
-            return 200;
-         } else {
-            return _p14._0;
-         }
+   var findYBounds = function (xypoints) {
+      var yvals = A2($List.map,
+      function (p) {
+         return p.y;
+      },
+      xypoints);
+      var maxY = $List.maximum(yvals);
+      var minY = $List.minimum(yvals);
+      return {ctor: "_Tuple2"
+             ,_0: getBoundValue(minY)
+             ,_1: getBoundValue(maxY)};
    };
-   var getXVals = function (coords) {
-      return A2($List.map,function (c) {    return c.x;},coords);
-   };
-   var getMaxX = function (coords) {
-      return getMaxValueOrDefault($List.head($List.reverse($List.sort(getXVals(coords)))));
+   var getYBounds = function (resources) {
+      var refPoint = {latDeg: 33.637,lonDeg: 84.2567};
+      var xypoints = $List.concat(A2($List.map,
+      function (r) {
+         return A2($List.map,
+         function (g) {
+            return A2(toXYPoint,refPoint,toWestLongitude(g));
+         },
+         r.coords);
+      },
+      resources));
+      return findYBounds(xypoints);
    };
    var getYScaleFactor = F2(function (minY,maxY) {
       return getMapDisplayHeight / (2.0 * (maxY - minY));
@@ -12994,15 +12950,21 @@ Elm.ResourceDecoder.make = function (_elm) {
       return $Basics.toString(cx * A2(getXScaleFactor,minX,maxX));
    });
    var toPointString = F5(function (resource,minX,maxX,minY,maxY) {
+      var refPoint = {latDeg: 33.637,lonDeg: 84.2567};
+      var xypoints = A2($List.map,
+      function (g) {
+         return A2(toXYPoint,refPoint,toWestLongitude(g));
+      },
+      resource.coords);
       return $String.concat(A2($List.map,
-      function (c) {
+      function (p) {
          return A2($Basics._op["++"],
-         A3(toDisplayX,c.x,minX,maxX),
+         A3(toDisplayX,p.x,minX,maxX),
          A2($Basics._op["++"],
          ",",
-         A2($Basics._op["++"],A3(toDisplayY,c.y,minY,maxY)," ")));
+         A2($Basics._op["++"],A3(toDisplayY,p.y,minY,maxY)," ")));
       },
-      resource.coords));
+      xypoints));
    });
    var toSvgPolygon = F5(function (resource,minX,maxX,minY,maxY) {
       return A2($Svg.polygon,
@@ -13017,12 +12979,12 @@ Elm.ResourceDecoder.make = function (_elm) {
       _U.list([]));
    });
    var toSvgPolygons = function (resources) {
-      var _p15 = getYBounds(resources);
-      var minY = _p15._0;
-      var maxY = _p15._1;
-      var _p16 = getXBounds(resources);
-      var minX = _p16._0;
-      var maxX = _p16._1;
+      var _p12 = getYBounds(resources);
+      var minY = _p12._0;
+      var maxY = _p12._1;
+      var _p13 = getXBounds(resources);
+      var minX = _p13._0;
+      var maxX = _p13._1;
       return A2($List.map,
       function (r) {
          return A5(toSvgPolygon,r,minX,maxX,minY,maxY);
@@ -13035,27 +12997,47 @@ Elm.ResourceDecoder.make = function (_elm) {
    minY,
    maxY,
    fillColorString) {
+      var refPoint = {latDeg: 33.637,lonDeg: 84.2567};
+      var xypoints = A2($List.map,
+      function (g) {
+         return A2(toXYPoint,refPoint,toWestLongitude(g));
+      },
+      resource.coords);
+      var pointString = $String.concat(A2($List.map,
+      function (p) {
+         return A2($Basics._op["++"],
+         A3(toDisplayX,p.x,minX,maxX),
+         A2($Basics._op["++"],
+         ",",
+         A2($Basics._op["++"],A3(toDisplayY,p.y,minY,maxY)," ")));
+      },
+      xypoints));
       return A2($Svg.polygon,
       _U.list([$Svg$Attributes.fillOpacity("0.4")
               ,$Svg$Attributes.style(A2($Basics._op["++"],
               "stroke:#FF0000; fill:",
               fillColorString))
-              ,$Svg$Attributes.points(A5(toPointString,
-              resource,
-              minX,
-              maxX,
-              minY,
-              maxY))]),
+              ,$Svg$Attributes.points(pointString)]),
       _U.list([]));
    });
    var toSvgPolygonsColoredByCount = F2(function (resources,
    resourceCounts) {
-      var _p17 = getYBounds(resources);
-      var minY = _p17._0;
-      var maxY = _p17._1;
-      var _p18 = getXBounds(resources);
-      var minX = _p18._0;
-      var maxX = _p18._1;
+      var refPoint = {latDeg: 33.637,lonDeg: 84.2567};
+      var xypoints = $List.concat(A2($List.map,
+      function (r) {
+         return A2($List.map,
+         function (g) {
+            return A2(toXYPoint,refPoint,toWestLongitude(g));
+         },
+         r.coords);
+      },
+      resources));
+      var _p14 = findXBounds(xypoints);
+      var minX = _p14._0;
+      var maxX = _p14._1;
+      var _p15 = findYBounds(xypoints);
+      var minY = _p15._0;
+      var maxY = _p15._1;
       return A2($List.map,
       function (r) {
          return A6(toSvgPolygonColoredByCount,
@@ -13069,16 +13051,16 @@ Elm.ResourceDecoder.make = function (_elm) {
       resources);
    });
    var toSvgPolygonsOrNothing = function (model) {
-      var _p19 = model.resources;
-      if (_p19.ctor === "Nothing") {
+      var _p16 = model.resources;
+      if (_p16.ctor === "Nothing") {
             return _U.list([]);
          } else {
-            var _p21 = _p19._0;
-            var _p20 = model.resourceCounts;
-            if (_p20.ctor === "Nothing") {
-                  return toSvgPolygons(_p21);
+            var _p18 = _p16._0;
+            var _p17 = model.resourceCounts;
+            if (_p17.ctor === "Nothing") {
+                  return toSvgPolygons(_p18);
                } else {
-                  return A2(toSvgPolygonsColoredByCount,_p21,_p20._0);
+                  return A2(toSvgPolygonsColoredByCount,_p18,_p17._0);
                }
          }
    };
@@ -13136,8 +13118,8 @@ Elm.ResourceDecoder.make = function (_elm) {
       _U.list([]));
    });
    var toPolylines = function (model) {
-      var _p22 = model.routes;
-      if (_p22.ctor === "Nothing") {
+      var _p19 = model.routes;
+      if (_p19.ctor === "Nothing") {
             return _U.list([A2($Svg.line,
             _U.list([$Svg$Attributes.x1("-200")
                     ,$Svg$Attributes.x2("0")
@@ -13146,34 +13128,34 @@ Elm.ResourceDecoder.make = function (_elm) {
                     ,$Svg$Attributes.stroke("black")]),
             _U.list([]))]);
          } else {
-            var _p29 = _p22._0;
-            var _p23 = model.resources;
-            if (_p23.ctor === "Nothing") {
-                  var _p24 = {ctor: "_Tuple2",_0: -1000,_1: 1000};
-                  var minY = _p24._0;
-                  var maxY = _p24._1;
-                  var _p25 = {ctor: "_Tuple2",_0: -1000,_1: 1000};
-                  var minX = _p25._0;
-                  var maxX = _p25._1;
+            var _p26 = _p19._0;
+            var _p20 = model.resources;
+            if (_p20.ctor === "Nothing") {
+                  var _p21 = {ctor: "_Tuple2",_0: -1000,_1: 1000};
+                  var minY = _p21._0;
+                  var maxY = _p21._1;
+                  var _p22 = {ctor: "_Tuple2",_0: -1000,_1: 1000};
+                  var minX = _p22._0;
+                  var maxX = _p22._1;
                   return A2($List.map,
                   function (r) {
                      return A5(toPolyline,r,minX,maxX,minY,maxY);
                   },
-                  _p29);
+                  _p26);
                } else {
-                  var _p28 = _p23._0;
-                  var sectorPolygons = toSvgPolygons(_p28);
-                  var _p26 = getYBounds(_p28);
-                  var minY = _p26._0;
-                  var maxY = _p26._1;
-                  var _p27 = getXBounds(_p28);
-                  var minX = _p27._0;
-                  var maxX = _p27._1;
+                  var _p25 = _p20._0;
+                  var sectorPolygons = toSvgPolygons(_p25);
+                  var _p23 = getYBounds(_p25);
+                  var minY = _p23._0;
+                  var maxY = _p23._1;
+                  var _p24 = getXBounds(_p25);
+                  var minX = _p24._0;
+                  var maxX = _p24._1;
                   var routeLines = A2($List.map,
                   function (r) {
                      return A5(toPolyline,r,minX,maxX,minY,maxY);
                   },
-                  _p29);
+                  _p26);
                   return A2($List.append,routeLines,sectorPolygons);
                }
          }
@@ -13210,25 +13192,25 @@ Elm.ResourceDecoder.make = function (_elm) {
       toPolylines(model)))]));
    };
    var toStringList = function (maybeResource) {
-      var _p30 = maybeResource;
-      if (_p30.ctor === "Nothing") {
+      var _p27 = maybeResource;
+      if (_p27.ctor === "Nothing") {
             return _U.list([]);
          } else {
             return A2($List.map,
             function (c) {
                return A2($Basics._op["++"],
-               $Basics.toString(c.x),
-               A2($Basics._op["++"],",",$Basics.toString(c.y)));
+               $Basics.toString(c.latDeg),
+               A2($Basics._op["++"],",",$Basics.toString(c.lonDeg)));
             },
-            _p30._0.coords);
+            _p27._0.coords);
          }
    };
    var getNth = F2(function (n,maybeResources) {
-      var _p31 = maybeResources;
-      if (_p31.ctor === "Nothing") {
+      var _p28 = maybeResources;
+      if (_p28.ctor === "Nothing") {
             return $Maybe.Nothing;
          } else {
-            return $List.head(A2($List.drop,n,_p31._0));
+            return $List.head(A2($List.drop,n,_p28._0));
          }
    });
    var toDisplayCount = function (c) {
@@ -13238,17 +13220,17 @@ Elm.ResourceDecoder.make = function (_elm) {
       return _U.eq(A2($Basics._op["%"],x,60),0) ? "4" : "2";
    };
    var interleave = F2(function (list1,list2) {
-      var _p32 = list1;
-      if (_p32.ctor === "[]") {
+      var _p29 = list1;
+      if (_p29.ctor === "[]") {
             return list2;
          } else {
-            var _p33 = list2;
-            if (_p33.ctor === "[]") {
+            var _p30 = list2;
+            if (_p30.ctor === "[]") {
                   return list1;
                } else {
                   return A2($List._op["::"],
-                  _p33._0,
-                  A2($List._op["::"],_p32._0,A2(interleave,_p32._1,_p33._1)));
+                  _p30._0,
+                  A2($List._op["::"],_p29._0,A2(interleave,_p29._1,_p30._1)));
                }
          }
    });
@@ -13338,8 +13320,8 @@ Elm.ResourceDecoder.make = function (_elm) {
       stairs(resourceCount)));
    };
    var createSparkLineForResource = function (maybeResourceCount) {
-      var _p34 = maybeResourceCount;
-      if (_p34.ctor === "Nothing") {
+      var _p31 = maybeResourceCount;
+      if (_p31.ctor === "Nothing") {
             return A2($Svg.line,
             _U.list([$Svg$Attributes.x1("-200")
                     ,$Svg$Attributes.x2("0")
@@ -13349,7 +13331,7 @@ Elm.ResourceDecoder.make = function (_elm) {
             _U.list([]));
          } else {
             return A2($Svg.polyline,
-            _U.list([$Svg$Attributes.points(toXYPointString(_p34._0))
+            _U.list([$Svg$Attributes.points(toXYPointString(_p31._0))
                     ,$Svg$Attributes.stroke("blue")
                     ,$Svg$Attributes.fill("none")]),
             _U.list([]));
@@ -13390,15 +13372,15 @@ Elm.ResourceDecoder.make = function (_elm) {
       createTicks)))]));
    };
    var toSvgs = function (maybeResourceCounts) {
-      var _p35 = maybeResourceCounts;
-      if (_p35.ctor === "Nothing") {
+      var _p32 = maybeResourceCounts;
+      if (_p32.ctor === "Nothing") {
             return _U.list([]);
          } else {
             return A2($List.map,
             function (r) {
                return createCountSvg(r);
             },
-            _p35._0);
+            _p32._0);
          }
    };
    var view = F2(function (address,model) {
@@ -13435,13 +13417,13 @@ Elm.ResourceDecoder.make = function (_elm) {
    toMaybeWithLogging(A2($Http.get,
    countDecoderColl,
    resourceCountsUrl))));
-   var resourcesUrl = "./resources.json";
+   var resourcesUrl = "./resources2.json";
    var getResources = $Effects.task(A2($Task.map,
    ShowResources,
-   $Task.toMaybe(A2($Http.get,decoderColl,resourcesUrl))));
+   toMaybeWithLogging(A2($Http.get,decoderColl,resourcesUrl))));
    var update = F2(function (action,model) {
-      var _p36 = action;
-      switch (_p36.ctor)
+      var _p33 = action;
+      switch (_p33.ctor)
       {case "NoOp": return {ctor: "_Tuple2"
                            ,_0: model
                            ,_1: $Effects.none};
@@ -13455,13 +13437,13 @@ Elm.ResourceDecoder.make = function (_elm) {
                                           ,_0: _U.update(model,{resourceCounts: $Maybe.Nothing})
                                           ,_1: getResourceCounts};
          case "ShowResources": return {ctor: "_Tuple2"
-                                      ,_0: _U.update(model,{resources: _p36._0})
+                                      ,_0: _U.update(model,{resources: _p33._0})
                                       ,_1: $Effects.none};
          case "ShowResourceCounts": return {ctor: "_Tuple2"
-                                           ,_0: _U.update(model,{resourceCounts: _p36._0})
+                                           ,_0: _U.update(model,{resourceCounts: _p33._0})
                                            ,_1: $Effects.none};
          default: return {ctor: "_Tuple2"
-                         ,_0: _U.update(model,{routes: _p36._0})
+                         ,_0: _U.update(model,{routes: _p33._0})
                          ,_1: $Effects.none};}
    });
    var app = $StartApp.start({init: init
@@ -13511,22 +13493,9 @@ Elm.ResourceDecoder.make = function (_elm) {
                                         ,getYScaleFactor: getYScaleFactor
                                         ,toDisplayX: toDisplayX
                                         ,toDisplayY: toDisplayY
-                                        ,getXVals: getXVals
-                                        ,getMaxX: getMaxX
-                                        ,getMaxValueOrDefault: getMaxValueOrDefault
                                         ,toPointString: toPointString
                                         ,toSvgPolygon: toSvgPolygon
                                         ,toSvgPolygonColoredByCount: toSvgPolygonColoredByCount
-                                        ,getXCoordValue: getXCoordValue
-                                        ,getMinXCoord: getMinXCoord
-                                        ,getMaxXCoord: getMaxXCoord
-                                        ,getMaxXCoords: getMaxXCoords
-                                        ,getMinXCoords: getMinXCoords
-                                        ,getYCoordValue: getYCoordValue
-                                        ,getMinYCoord: getMinYCoord
-                                        ,getMaxYCoord: getMaxYCoord
-                                        ,getMaxYCoords: getMaxYCoords
-                                        ,getMinYCoords: getMinYCoords
                                         ,getBoundValue: getBoundValue
                                         ,getXBounds: getXBounds
                                         ,getYBounds: getYBounds
@@ -13537,6 +13506,8 @@ Elm.ResourceDecoder.make = function (_elm) {
                                         ,getResourceCountsValue: getResourceCountsValue
                                         ,getMaxCountValueForResource: getMaxCountValueForResource
                                         ,getColorForResource: getColorForResource
+                                        ,findXBounds: findXBounds
+                                        ,findYBounds: findYBounds
                                         ,toSvgPolygonsColoredByCount: toSvgPolygonsColoredByCount
                                         ,toPolygons: toPolygons
                                         ,toSvgPolygonsOrNothing: toSvgPolygonsOrNothing

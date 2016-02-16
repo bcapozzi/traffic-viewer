@@ -14,7 +14,7 @@ import Array
 
 import GeoUtils exposing (..)
 
-resourcesUrl = "./resources.json"
+resourcesUrl = "./resources2.json"
 resourceCountsUrl = "./resource-counts.json"
 routesUrl = "./routes1.json"
 
@@ -195,7 +195,7 @@ toStringList maybeResource =
     Nothing ->
       []
     Just resource -> 
-      List.map (\c -> ((toString c.x) ++ "," ++ (toString c.y))) resource.coords
+      List.map (\c -> ((toString c.latDeg) ++ "," ++ (toString c.lonDeg))) resource.coords
 
 
 getXScaleFactor minX maxX = 
@@ -211,70 +211,27 @@ toDisplayX cx minX maxX =
 toDisplayY cy minY maxY  = 
   toString (-cy*(getYScaleFactor minY maxY))
 
-getXVals: List Coord -> List Float
-getXVals coords =
-  List.map (\c -> c.x) coords
-
-getMaxX: List Coord -> Float
-getMaxX coords =
-  getMaxValueOrDefault (List.head (List.reverse (List.sort (getXVals coords))))
-
-getMaxValueOrDefault maybeMax = 
-  case maybeMax of
-    Nothing ->
-      200
-    Just max ->
-      max
-
  
 -- convert single resource coords to SVG polygon
 
 toPointString resource minX maxX minY maxY =
-  String.concat(List.map (\c -> (toDisplayX c.x minX maxX) ++ "," ++ (toDisplayY c.y minY maxY) ++ " ") resource.coords)
+  let
+    refPoint = {latDeg=33.637, lonDeg=84.2567}
+    xypoints = List.map (\g -> toXYPoint refPoint (toWestLongitude g)) resource.coords 
+  in
+    String.concat (List.map (\p -> ((toDisplayX p.x minX maxX) ++ "," ++ (toDisplayY p.y minY maxY) ++ " ")) xypoints)
 
 toSvgPolygon resource minX maxX minY maxY =
   polygon [fillOpacity "0.4", style "stroke:#FF0000; fill:#FFFFFF", points (toPointString resource minX maxX minY maxY) ] []
 
 toSvgPolygonColoredByCount resource minX maxX minY maxY fillColorString =
-  polygon [fillOpacity "0.4", style ("stroke:#FF0000; fill:" ++ fillColorString), points (toPointString resource minX maxX minY maxY) ] []
+  let
+    refPoint = {latDeg=33.637, lonDeg=84.2567}
+    xypoints = List.map (\g -> toXYPoint refPoint (toWestLongitude g)) resource.coords 
+    pointString = String.concat (List.map (\p -> ((toDisplayX p.x minX maxX) ++ "," ++ (toDisplayY p.y minY maxY) ++ " ")) xypoints)
+  in
+    polygon [fillOpacity "0.4", style ("stroke:#FF0000; fill:" ++ fillColorString), points pointString] []
 
-getXCoordValue maybeCoord = 
-  case maybeCoord of
-    Nothing ->
-      0
-    Just coord ->
-      coord.x
-
-getMinXCoord resource = 
-  getXCoordValue (List.head (List.sortBy .x resource.coords))
-
-getMaxXCoord resource = 
-  getXCoordValue (List.head (List.reverse (List.sortBy .x resource.coords)))
-
-getMaxXCoords resources = 
-  List.map (\r -> getMaxXCoord r) resources
-
-getMinXCoords resources = 
-  List.map (\r -> getMinXCoord r) resources
-
-getYCoordValue maybeCoord = 
-  case maybeCoord of
-    Nothing ->
-      0
-    Just coord ->
-      coord.y
-
-getMinYCoord resource = 
-  getYCoordValue (List.head (List.sortBy .y resource.coords))
-
-getMaxYCoord resource = 
-  getYCoordValue (List.head (List.reverse (List.sortBy .y resource.coords)))
-
-getMaxYCoords resources = 
-  List.map (\r -> getMaxYCoord r) resources
-
-getMinYCoords resources = 
-  List.map (\r -> getMinYCoord r) resources
 
 getBoundValue maybeValue =
   case maybeValue of
@@ -285,17 +242,18 @@ getBoundValue maybeValue =
 
 getXBounds resources = 
   let
-    maxX = getBoundValue (List.head (List.reverse (List.sort (getMaxXCoords resources))))
-    minX = getBoundValue (List.head (List.sort (getMinXCoords resources)))
+    refPoint = {latDeg=33.637, lonDeg=84.2567}
+    xypoints = List.concat (List.map (\r -> List.map (\g -> toXYPoint refPoint (toWestLongitude g)) r.coords) resources)
   in
-  (minX, maxX)
+    findXBounds xypoints
+
 
 getYBounds resources = 
   let
-    maxY = getBoundValue( List.head (List.reverse (List.sort (getMaxYCoords resources))))
-    minY = getBoundValue( List.head (List.sort (getMinYCoords resources)))
+    refPoint = {latDeg=33.637, lonDeg=84.2567}
+    xypoints = List.concat (List.map (\r -> List.map (\g -> toXYPoint refPoint (toWestLongitude g)) r.coords) resources)
   in
-  (minY, maxY)
+    findYBounds xypoints
 
 toSvgPolygons resources =
   let 
@@ -343,12 +301,31 @@ getColorForResource resource resourceCounts =
     
 -- sort by count
 
+findXBounds xypoints =
+  let
+    xvals = List.map (\p -> p.x) xypoints
+    maxX = List.maximum xvals
+    minX = List.minimum xvals
+  in
+   (getBoundValue minX,getBoundValue maxX)  
+
+findYBounds xypoints =
+  let
+    yvals = List.map (\p -> p.y) xypoints
+    maxY = List.maximum yvals
+    minY = List.minimum yvals
+  in
+   ((getBoundValue minY),(getBoundValue maxY))  
+
+
 toSvgPolygonsColoredByCount resources resourceCounts =
   let 
-    (minX,maxX) = getXBounds resources
-    (minY,maxY) = getYBounds resources
+    refPoint = {latDeg=33.637, lonDeg=84.2567}
+    xypoints = List.concat (List.map (\r -> List.map (\g -> toXYPoint refPoint (toWestLongitude g)) r.coords) resources)
+    (minX,maxX) = findXBounds xypoints
+    (minY,maxY) = findYBounds xypoints
   in
-  List.map (\r -> (toSvgPolygonColoredByCount r minX maxX minY maxY (getColorForResource r resourceCounts))) resources
+    List.map (\r -> (toSvgPolygonColoredByCount r minX maxX minY maxY (getColorForResource r resourceCounts))) resources
 
 toPolygons maybeResources = 
   [
@@ -509,7 +486,7 @@ displayResources model =
     ]
 
 viewCoords coords = 
-  List.map (\c -> toString c.x) coords
+  List.map (\c -> toString c.latDeg) coords
 
 viewRoutes maybeRoutes =
   case maybeRoutes of
@@ -528,7 +505,7 @@ viewResourceCounts maybeResourceCounts =
 viewResources maybeResources =
   let
     viewCoord coord =
-      text ("x: " ++ (toString coord.x) ++ ", y: " ++ (toString coord.y))
+      text ("latDeg: " ++ (toString coord.latDeg) ++ ", lonDeg: " ++ (toString coord.lonDeg))
     viewResource resource =
       li [] ((text ("ID: " ++ resource.id ++ "-->")) :: (List.map viewCoord resource.coords))
   in
@@ -558,7 +535,7 @@ getResourceCounts =
 getResources : Effects Action
 getResources =
   Http.get decoderColl resourcesUrl
-    |> Task.toMaybe
+    |> toMaybeWithLogging
     |> Task.map ShowResources
     |> Effects.task
 
@@ -574,7 +551,7 @@ type alias Coord = {
 
 type alias Resource = {
     id : String
-  , coords : List Coord
+  , coords : List GeoPoint2D
 }
 
 type alias Resources  = List Resource
@@ -584,7 +561,7 @@ decoder : Decoder Resource
 decoder =
   Decode.object2 Resource
     ("id" := Decode.string)
-    ("coords" := Decode.list coordDecoder)
+    ("coords" := Decode.list geoPointDecoder)
 
 coordDecoder : Decoder Coord
 coordDecoder = 
