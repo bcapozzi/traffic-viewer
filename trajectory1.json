@@ -1,0 +1,87 @@
+{ "trajectory" : [
+  {"timestamp" : 0,
+   "latDeg" : 40.777248,
+   "lonDeg" : -73.872612,
+   "altFeet" : 0.000000
+  },
+  {"timestamp" : 621088,
+   "latDeg" : 40.559723,
+   "lonDeg" : -75.027779,
+   "altFeet" : 22833.334277
+  },
+  {"timestamp" : 791107,
+   "latDeg" : 40.351349,
+   "lonDeg" : -75.357666,
+   "altFeet" : 26403.127164
+  },
+  {"timestamp" : 895447,
+   "latDeg" : 40.222221,
+   "lonDeg" : -75.560280,
+   "altFeet" : 28667.832444
+  },
+  {"timestamp" : 1013123,
+   "latDeg" : 40.092224,
+   "lonDeg" : -75.818611,
+   "altFeet" : 30020.728829
+  },
+  {"timestamp" : 1123514,
+   "latDeg" : 39.961388,
+   "lonDeg" : -76.076111,
+   "altFeet" : 30020.728829
+  },
+  {"timestamp" : 1169194,
+   "latDeg" : 39.907223,
+   "lonDeg" : -76.182503,
+   "altFeet" : 30020.728829
+  },
+  {"timestamp" : 1513610,
+   "latDeg" : 39.494999,
+   "lonDeg" : -76.978615,
+   "altFeet" : 30020.728829
+  },
+  {"timestamp" : 1551218,
+   "latDeg" : 39.432461,
+   "lonDeg" : -77.044510,
+   "altFeet" : 30020.728829
+  },
+  {"timestamp" : 1615832,
+   "latDeg" : 39.324963,
+   "lonDeg" : -77.157509,
+   "altFeet" : 30020.728829
+  },
+  {"timestamp" : 1792779,
+   "latDeg" : 39.029999,
+   "lonDeg" : -77.465157,
+   "altFeet" : 30020.728829
+  },
+  {"timestamp" : 1847811,
+   "latDeg" : 38.938110,
+   "lonDeg" : -77.560333,
+   "altFeet" : 30020.728829
+  },
+  {"timestamp" : 1871860,
+   "latDeg" : 38.897915,
+   "lonDeg" : -77.601822,
+   "altFeet" : 30020.728829
+  },
+  {"timestamp" : 2025329,
+   "latDeg" : 38.641109,
+   "lonDeg" : -77.865555,
+   "altFeet" : 30020.728829
+  },
+  {"timestamp" : 2133942,
+   "latDeg" : 38.501305,
+   "lonDeg" : -78.103691,
+   "altFeet" : 30020.728829
+  },
+  {"timestamp" : 2596325,
+   "latDeg" : 37.900555,
+   "lonDeg" : -79.106941,
+   "altFeet" : 30020.728829
+  },
+  {"timestamp" : 5713440,
+   "latDeg" : 33.636700,
+   "lonDeg" : -84.427864,
+   "altFeet" : 209.765862
+  }
+]}

@@ -12577,6 +12577,19 @@ Elm.ResourceDecoder.make = function (_elm) {
    $Svg$Attributes = Elm.Svg.Attributes.make(_elm),
    $Task = Elm.Task.make(_elm);
    var _op = {};
+   var TrajectoryPoint = F3(function (a,b,c) {
+      return {timestamp: a,latDeg: b,lonDeg: c};
+   });
+   var trajectoryPointDecoder = A4($Json$Decode.object3,
+   TrajectoryPoint,
+   A2($Json$Decode._op[":="],"timestamp",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"latDeg",$Json$Decode.$float),
+   A2($Json$Decode._op[":="],"lonDeg",$Json$Decode.$float));
+   var trajectoryDecoder = A2($Json$Decode.object1,
+   $Basics.identity,
+   A2($Json$Decode._op[":="],
+   "trajectory",
+   $Json$Decode.list(trajectoryPointDecoder)));
    var geoPointDecoder = A3($Json$Decode.object2,
    $GeoUtils.GeoPoint2D,
    A2($Json$Decode._op[":="],"latDeg",$Json$Decode.$float),
@@ -12711,6 +12724,26 @@ Elm.ResourceDecoder.make = function (_elm) {
       },
       coords);
    };
+   var viewTrajectory = function (maybeTrajectory) {
+      var _p3 = maybeTrajectory;
+      if (_p3.ctor === "Nothing") {
+            return A2($Html.div,
+            _U.list([]),
+            _U.list([$Html.text("No trajectory to display.  Try clicking the button")]));
+         } else {
+            return A2($Html.div,
+            _U.list([]),
+            _U.list([$Html.text(A2($Basics._op["++"],
+            "Found ",
+            A2($Basics._op["++"],
+            $Basics.toString($List.length(_p3._0)),
+            " points in trajectory, baby!")))]));
+         }
+   };
+   var toGeoPoint = function (trajectoryPoint) {
+      return {latDeg: trajectoryPoint.latDeg
+             ,lonDeg: trajectoryPoint.lonDeg};
+   };
    var getMinRouteY = function (route) {
       var yvals = A2($List.map,
       function (p) {
@@ -12718,11 +12751,11 @@ Elm.ResourceDecoder.make = function (_elm) {
       },
       route.points);
       var ymin = $List.minimum(yvals);
-      var _p3 = ymin;
-      if (_p3.ctor === "Nothing") {
+      var _p4 = ymin;
+      if (_p4.ctor === "Nothing") {
             return 0;
          } else {
-            return _p3._0;
+            return _p4._0;
          }
    };
    var getMaxRouteY = function (route) {
@@ -12732,19 +12765,19 @@ Elm.ResourceDecoder.make = function (_elm) {
       },
       route.points);
       var ymax = $List.maximum(yvals);
-      var _p4 = ymax;
-      if (_p4.ctor === "Nothing") {
-            return 0;
-         } else {
-            return _p4._0;
-         }
-   };
-   var getValueForBound = function (maybeValue) {
-      var _p5 = maybeValue;
+      var _p5 = ymax;
       if (_p5.ctor === "Nothing") {
             return 0;
          } else {
             return _p5._0;
+         }
+   };
+   var getValueForBound = function (maybeValue) {
+      var _p6 = maybeValue;
+      if (_p6.ctor === "Nothing") {
+            return 0;
+         } else {
+            return _p6._0;
          }
    };
    var getRouteYBounds = function (routes) {
@@ -12769,11 +12802,11 @@ Elm.ResourceDecoder.make = function (_elm) {
       },
       route.points);
       var xmin = $List.minimum(xvals);
-      var _p6 = xmin;
-      if (_p6.ctor === "Nothing") {
+      var _p7 = xmin;
+      if (_p7.ctor === "Nothing") {
             return 0;
          } else {
-            return _p6._0;
+            return _p7._0;
          }
    };
    var getMaxRouteX = function (route) {
@@ -12783,11 +12816,11 @@ Elm.ResourceDecoder.make = function (_elm) {
       },
       route.points);
       var xmax = $List.maximum(xvals);
-      var _p7 = xmax;
-      if (_p7.ctor === "Nothing") {
+      var _p8 = xmax;
+      if (_p8.ctor === "Nothing") {
             return 0;
          } else {
-            return _p7._0;
+            return _p8._0;
          }
    };
    var getRouteXBounds = function (routes) {
@@ -12811,11 +12844,11 @@ Elm.ResourceDecoder.make = function (_elm) {
    var getRefPoint = {latDeg: 33.637,lonDeg: 84.2567};
    var toXYPoint = function (p) {
       var refPoint = getRefPoint;
-      var _p8 = A2($GeoUtils.getEastNorthOffsetNmiBetween,
+      var _p9 = A2($GeoUtils.getEastNorthOffsetNmiBetween,
       refPoint,
       toWestLongitude(p));
-      var deast = _p8._0;
-      var dnorth = _p8._1;
+      var deast = _p9._0;
+      var dnorth = _p9._1;
       return {x: deast,y: dnorth};
    };
    var toXYPoints = function (coordList) {
@@ -12824,6 +12857,18 @@ Elm.ResourceDecoder.make = function (_elm) {
          return toXYPoint(g);
       },
       coordList);
+   };
+   var trajectoryToXYPoints = function (trajectory) {
+      var gpoints = A2($List.map,
+      function (p) {
+         return toGeoPoint(p);
+      },
+      trajectory);
+      return A2($List.map,
+      function (g) {
+         return toXYPoint(g);
+      },
+      gpoints);
    };
    var getMapDisplayHeight = 600;
    var getMapDisplayWidth = 600;
@@ -12841,11 +12886,11 @@ Elm.ResourceDecoder.make = function (_elm) {
       _U.list([]))]);
    };
    var getCountValue = function (maybeValue) {
-      var _p9 = maybeValue;
-      if (_p9.ctor === "Nothing") {
+      var _p10 = maybeValue;
+      if (_p10.ctor === "Nothing") {
             return 0;
          } else {
-            return _p9._0;
+            return _p10._0;
          }
    };
    var getMaxCountForResource = function (resourceCount) {
@@ -12856,11 +12901,11 @@ Elm.ResourceDecoder.make = function (_elm) {
       resourceCount.counts)))));
    };
    var getResourceCountsValue = function (maybeResourceCounts) {
-      var _p10 = maybeResourceCounts;
-      if (_p10.ctor === "Nothing") {
+      var _p11 = maybeResourceCounts;
+      if (_p11.ctor === "Nothing") {
             return 0;
          } else {
-            return getMaxCountForResource(_p10._0);
+            return getMaxCountForResource(_p11._0);
          }
    };
    var getMaxCountValueForResource = F2(function (resource,
@@ -12896,11 +12941,11 @@ Elm.ResourceDecoder.make = function (_elm) {
       resources));
    };
    var getBoundValue = function (maybeValue) {
-      var _p11 = maybeValue;
-      if (_p11.ctor === "Nothing") {
+      var _p12 = maybeValue;
+      if (_p12.ctor === "Nothing") {
             return 0;
          } else {
-            return _p11._0;
+            return _p12._0;
          }
    };
    var findXBounds = function (xypoints) {
@@ -12974,12 +13019,12 @@ Elm.ResourceDecoder.make = function (_elm) {
       _U.list([]));
    });
    var toSvgPolygons = function (resources) {
-      var _p12 = getYBounds(resources);
-      var minY = _p12._0;
-      var maxY = _p12._1;
-      var _p13 = getXBounds(resources);
-      var minX = _p13._0;
-      var maxX = _p13._1;
+      var _p13 = getYBounds(resources);
+      var minY = _p13._0;
+      var maxY = _p13._1;
+      var _p14 = getXBounds(resources);
+      var minX = _p14._0;
+      var maxX = _p14._1;
       return A2($List.map,
       function (r) {
          return A5(toSvgPolygon,r,minX,maxX,minY,maxY);
@@ -13013,12 +13058,12 @@ Elm.ResourceDecoder.make = function (_elm) {
    var toSvgPolygonsColoredByCount = F2(function (resources,
    resourceCounts) {
       var xypoints = getAllXYPoints(resources);
-      var _p14 = findXBounds(xypoints);
-      var minX = _p14._0;
-      var maxX = _p14._1;
-      var _p15 = findYBounds(xypoints);
-      var minY = _p15._0;
-      var maxY = _p15._1;
+      var _p15 = findXBounds(xypoints);
+      var minX = _p15._0;
+      var maxX = _p15._1;
+      var _p16 = findYBounds(xypoints);
+      var minY = _p16._0;
+      var maxY = _p16._1;
       return A2($List.map,
       function (r) {
          return A6(toSvgPolygonColoredByCount,
@@ -13032,16 +13077,16 @@ Elm.ResourceDecoder.make = function (_elm) {
       resources);
    });
    var toSvgPolygonsOrNothing = function (model) {
-      var _p16 = model.resources;
-      if (_p16.ctor === "Nothing") {
+      var _p17 = model.resources;
+      if (_p17.ctor === "Nothing") {
             return _U.list([]);
          } else {
-            var _p18 = _p16._0;
-            var _p17 = model.resourceCounts;
-            if (_p17.ctor === "Nothing") {
-                  return toSvgPolygons(_p18);
+            var _p19 = _p17._0;
+            var _p18 = model.resourceCounts;
+            if (_p18.ctor === "Nothing") {
+                  return toSvgPolygons(_p19);
                } else {
-                  return A2(toSvgPolygonsColoredByCount,_p18,_p17._0);
+                  return A2(toSvgPolygonsColoredByCount,_p19,_p18._0);
                }
          }
    };
@@ -13093,9 +13138,39 @@ Elm.ResourceDecoder.make = function (_elm) {
               ,$Svg$Attributes.fill("none")]),
       _U.list([]));
    });
+   var trajectoryToPolyline = F5(function (maybeTrajectory,
+   minX,
+   maxX,
+   minY,
+   maxY) {
+      var _p20 = maybeTrajectory;
+      if (_p20.ctor === "Nothing") {
+            return A2($Svg.polyline,
+            _U.list([$Svg$Attributes.points("0,0 100,0")
+                    ,$Svg$Attributes.stroke("red")
+                    ,$Svg$Attributes.fill("none")]),
+            _U.list([]));
+         } else {
+            var xypoints = trajectoryToXYPoints(_p20._0);
+            var pointString = $String.concat(A2($List.map,
+            function (p) {
+               return A2($Basics._op["++"],
+               A3(toDisplayX,p.x,minX,maxX),
+               A2($Basics._op["++"],
+               ",",
+               A2($Basics._op["++"],A3(toDisplayY,p.y,minY,maxY)," ")));
+            },
+            xypoints));
+            return A2($Svg.polyline,
+            _U.list([$Svg$Attributes.points(pointString)
+                    ,$Svg$Attributes.stroke("orange")
+                    ,$Svg$Attributes.fill("none")]),
+            _U.list([]));
+         }
+   });
    var toPolylines = function (model) {
-      var _p19 = model.routes;
-      if (_p19.ctor === "Nothing") {
+      var _p21 = model.routes;
+      if (_p21.ctor === "Nothing") {
             return _U.list([A2($Svg.line,
             _U.list([$Svg$Attributes.x1("-200")
                     ,$Svg$Attributes.x2("0")
@@ -13104,35 +13179,43 @@ Elm.ResourceDecoder.make = function (_elm) {
                     ,$Svg$Attributes.stroke("black")]),
             _U.list([]))]);
          } else {
-            var _p26 = _p19._0;
-            var _p20 = model.resources;
-            if (_p20.ctor === "Nothing") {
-                  var _p21 = {ctor: "_Tuple2",_0: -1000,_1: 1000};
-                  var minY = _p21._0;
-                  var maxY = _p21._1;
-                  var _p22 = {ctor: "_Tuple2",_0: -1000,_1: 1000};
-                  var minX = _p22._0;
-                  var maxX = _p22._1;
+            var _p28 = _p21._0;
+            var _p22 = model.resources;
+            if (_p22.ctor === "Nothing") {
+                  var _p23 = {ctor: "_Tuple2",_0: -1000,_1: 1000};
+                  var minY = _p23._0;
+                  var maxY = _p23._1;
+                  var _p24 = {ctor: "_Tuple2",_0: -1000,_1: 1000};
+                  var minX = _p24._0;
+                  var maxX = _p24._1;
                   return A2($List.map,
                   function (r) {
                      return A5(toPolyline,r,minX,maxX,minY,maxY);
                   },
-                  _p26);
+                  _p28);
                } else {
-                  var _p25 = _p20._0;
-                  var sectorPolygons = toSvgPolygons(_p25);
-                  var _p23 = getYBounds(_p25);
-                  var minY = _p23._0;
-                  var maxY = _p23._1;
-                  var _p24 = getXBounds(_p25);
-                  var minX = _p24._0;
-                  var maxX = _p24._1;
+                  var _p27 = _p22._0;
+                  var sectorPolygons = toSvgPolygons(_p27);
+                  var _p25 = getYBounds(_p27);
+                  var minY = _p25._0;
+                  var maxY = _p25._1;
+                  var _p26 = getXBounds(_p27);
+                  var minX = _p26._0;
+                  var maxX = _p26._1;
                   var routeLines = A2($List.map,
                   function (r) {
                      return A5(toPolyline,r,minX,maxX,minY,maxY);
                   },
-                  _p26);
-                  return A2($List.append,routeLines,sectorPolygons);
+                  _p28);
+                  var trajectoryLine = A5(trajectoryToPolyline,
+                  model.trajectory,
+                  minX,
+                  maxX,
+                  minY,
+                  maxY);
+                  return A2($List.append,
+                  A2($List.append,routeLines,sectorPolygons),
+                  _U.list([trajectoryLine]));
                }
          }
    };
@@ -13168,8 +13251,8 @@ Elm.ResourceDecoder.make = function (_elm) {
       toPolylines(model)))]));
    };
    var toStringList = function (maybeResource) {
-      var _p27 = maybeResource;
-      if (_p27.ctor === "Nothing") {
+      var _p29 = maybeResource;
+      if (_p29.ctor === "Nothing") {
             return _U.list([]);
          } else {
             return A2($List.map,
@@ -13178,15 +13261,15 @@ Elm.ResourceDecoder.make = function (_elm) {
                $Basics.toString(c.latDeg),
                A2($Basics._op["++"],",",$Basics.toString(c.lonDeg)));
             },
-            _p27._0.coords);
+            _p29._0.coords);
          }
    };
    var getNth = F2(function (n,maybeResources) {
-      var _p28 = maybeResources;
-      if (_p28.ctor === "Nothing") {
+      var _p30 = maybeResources;
+      if (_p30.ctor === "Nothing") {
             return $Maybe.Nothing;
          } else {
-            return $List.head(A2($List.drop,n,_p28._0));
+            return $List.head(A2($List.drop,n,_p30._0));
          }
    });
    var toDisplayCount = function (c) {
@@ -13196,17 +13279,17 @@ Elm.ResourceDecoder.make = function (_elm) {
       return _U.eq(A2($Basics._op["%"],x,60),0) ? "4" : "2";
    };
    var interleave = F2(function (list1,list2) {
-      var _p29 = list1;
-      if (_p29.ctor === "[]") {
+      var _p31 = list1;
+      if (_p31.ctor === "[]") {
             return list2;
          } else {
-            var _p30 = list2;
-            if (_p30.ctor === "[]") {
+            var _p32 = list2;
+            if (_p32.ctor === "[]") {
                   return list1;
                } else {
                   return A2($List._op["::"],
-                  _p30._0,
-                  A2($List._op["::"],_p29._0,A2(interleave,_p29._1,_p30._1)));
+                  _p32._0,
+                  A2($List._op["::"],_p31._0,A2(interleave,_p31._1,_p32._1)));
                }
          }
    });
@@ -13228,14 +13311,19 @@ Elm.ResourceDecoder.make = function (_elm) {
               ,_0: {resources: $Maybe.Nothing
                    ,resourceCounts: $Maybe.Nothing
                    ,routes: $Maybe.Nothing
+                   ,trajectory: $Maybe.Nothing
                    ,currentTime: 0}
               ,_1: $Effects.none};
-   var Model = F4(function (a,b,c,d) {
+   var Model = F5(function (a,b,c,d,e) {
       return {resources: a
              ,resourceCounts: b
              ,routes: c
-             ,currentTime: d};
+             ,trajectory: d
+             ,currentTime: e};
    });
+   var ShowTrajectory = function (a) {
+      return {ctor: "ShowTrajectory",_0: a};
+   };
    var ShowRoutes = function (a) {
       return {ctor: "ShowRoutes",_0: a};
    };
@@ -13254,6 +13342,7 @@ Elm.ResourceDecoder.make = function (_elm) {
       return {ctor: "ShiftTimeForward",_0: a};
    };
    var GetRoutes = {ctor: "GetRoutes"};
+   var GetTrajectory = {ctor: "GetTrajectory"};
    var NoOp = {ctor: "NoOp"};
    var getDisplayTimeOrigin = 200;
    var createLabelForResourceCount = function (resourceCount) {
@@ -13319,8 +13408,8 @@ Elm.ResourceDecoder.make = function (_elm) {
       stairsData));
    });
    var createSparkLineForResource = function (maybeResourceCount) {
-      var _p31 = maybeResourceCount;
-      if (_p31.ctor === "Nothing") {
+      var _p33 = maybeResourceCount;
+      if (_p33.ctor === "Nothing") {
             return A2($Svg.line,
             _U.list([$Svg$Attributes.x1("-200")
                     ,$Svg$Attributes.x2("0")
@@ -13330,7 +13419,7 @@ Elm.ResourceDecoder.make = function (_elm) {
             _U.list([]));
          } else {
             return A2($Svg.polyline,
-            _U.list([$Svg$Attributes.points(A2(toXYPointString,_p31._0,0))
+            _U.list([$Svg$Attributes.points(A2(toXYPointString,_p33._0,0))
                     ,$Svg$Attributes.stroke("blue")
                     ,$Svg$Attributes.fill("none")]),
             _U.list([]));
@@ -13365,15 +13454,15 @@ Elm.ResourceDecoder.make = function (_elm) {
       createTicks))]));
    });
    var toSvgs = F2(function (maybeResourceCounts,refTime) {
-      var _p32 = maybeResourceCounts;
-      if (_p32.ctor === "Nothing") {
+      var _p34 = maybeResourceCounts;
+      if (_p34.ctor === "Nothing") {
             return _U.list([]);
          } else {
             return A2($List.map,
             function (r) {
                return A2(createCountSvg,r,refTime);
             },
-            _p32._0);
+            _p34._0);
          }
    });
    var view = F2(function (address,model) {
@@ -13389,11 +13478,15 @@ Elm.ResourceDecoder.make = function (_elm) {
               ,A2($Html.button,
               _U.list([A2($Html$Events.onClick,address,GetRoutes)]),
               _U.list([$Html.text("Click to get routes!")]))
+              ,A2($Html.button,
+              _U.list([A2($Html$Events.onClick,address,GetTrajectory)]),
+              _U.list([$Html.text("Click for trajectory!")]))
               ,A2($Html.br,_U.list([]),_U.list([]))
               ,displayResources(model)
               ,displayRoutes(model)
               ,viewResourceCounts(model.resourceCounts)
               ,viewRoutes(model.routes)
+              ,viewTrajectory(model.trajectory)
               ,A2($Html.button,
               _U.list([A2($Html$Events.onClick,
               address,
@@ -13411,6 +13504,12 @@ Elm.ResourceDecoder.make = function (_elm) {
       A2($Html.br,_U.list([]),_U.list([])),
       A2(toSvgs,model.resourceCounts,model.currentTime))));
    });
+   var trajectoryUrl = "./trajectory1.json";
+   var getTrajectory = $Effects.task(A2($Task.map,
+   ShowTrajectory,
+   toMaybeWithLogging(A2($Http.get,
+   trajectoryDecoder,
+   trajectoryUrl))));
    var routesUrl = "./routes1.json";
    var getRoutes = $Effects.task(A2($Task.map,
    ShowRoutes,
@@ -13428,11 +13527,14 @@ Elm.ResourceDecoder.make = function (_elm) {
    ShowResources,
    toMaybeWithLogging(A2($Http.get,decoderColl,resourcesUrl))));
    var update = F2(function (action,model) {
-      var _p33 = action;
-      switch (_p33.ctor)
+      var _p35 = action;
+      switch (_p35.ctor)
       {case "NoOp": return {ctor: "_Tuple2"
                            ,_0: model
                            ,_1: $Effects.none};
+         case "GetTrajectory": return {ctor: "_Tuple2"
+                                      ,_0: _U.update(model,{trajectory: $Maybe.Nothing})
+                                      ,_1: getTrajectory};
          case "GetRoutes": return {ctor: "_Tuple2"
                                   ,_0: _U.update(model,{routes: $Maybe.Nothing})
                                   ,_1: getRoutes};
@@ -13443,19 +13545,22 @@ Elm.ResourceDecoder.make = function (_elm) {
                                           ,_0: _U.update(model,{resourceCounts: $Maybe.Nothing})
                                           ,_1: getResourceCounts};
          case "ShowResources": return {ctor: "_Tuple2"
-                                      ,_0: _U.update(model,{resources: _p33._0})
+                                      ,_0: _U.update(model,{resources: _p35._0})
                                       ,_1: $Effects.none};
          case "ShowResourceCounts": return {ctor: "_Tuple2"
-                                           ,_0: _U.update(model,{resourceCounts: _p33._0})
+                                           ,_0: _U.update(model,{resourceCounts: _p35._0})
                                            ,_1: $Effects.none};
          case "ShowRoutes": return {ctor: "_Tuple2"
-                                   ,_0: _U.update(model,{routes: _p33._0})
+                                   ,_0: _U.update(model,{routes: _p35._0})
                                    ,_1: $Effects.none};
+         case "ShowTrajectory": return {ctor: "_Tuple2"
+                                       ,_0: _U.update(model,{trajectory: _p35._0})
+                                       ,_1: $Effects.none};
          case "ShiftTimeForward": return {ctor: "_Tuple2"
-                                         ,_0: _U.update(model,{currentTime: _p33._0})
+                                         ,_0: _U.update(model,{currentTime: _p35._0})
                                          ,_1: $Effects.none};
          default: return {ctor: "_Tuple2"
-                         ,_0: _U.update(model,{currentTime: _p33._0})
+                         ,_0: _U.update(model,{currentTime: _p35._0})
                          ,_1: $Effects.none};}
    });
    var app = $StartApp.start({init: init
@@ -13469,11 +13574,13 @@ Elm.ResourceDecoder.make = function (_elm) {
                                         ,resourcesUrl: resourcesUrl
                                         ,resourceCountsUrl: resourceCountsUrl
                                         ,routesUrl: routesUrl
+                                        ,trajectoryUrl: trajectoryUrl
                                         ,getTimeOrigin: getTimeOrigin
                                         ,getDisplayTimeOrigin: getDisplayTimeOrigin
                                         ,app: app
                                         ,main: main
                                         ,NoOp: NoOp
+                                        ,GetTrajectory: GetTrajectory
                                         ,GetRoutes: GetRoutes
                                         ,ShiftTimeForward: ShiftTimeForward
                                         ,ShiftTimeBackward: ShiftTimeBackward
@@ -13482,6 +13589,7 @@ Elm.ResourceDecoder.make = function (_elm) {
                                         ,ShowResources: ShowResources
                                         ,ShowResourceCounts: ShowResourceCounts
                                         ,ShowRoutes: ShowRoutes
+                                        ,ShowTrajectory: ShowTrajectory
                                         ,Model: Model
                                         ,init: init
                                         ,update: update
@@ -13544,14 +13652,19 @@ Elm.ResourceDecoder.make = function (_elm) {
                                         ,getMaxRouteY: getMaxRouteY
                                         ,getMinRouteY: getMinRouteY
                                         ,toPolylines: toPolylines
+                                        ,trajectoryToPolyline: trajectoryToPolyline
+                                        ,trajectoryToXYPoints: trajectoryToXYPoints
+                                        ,toGeoPoint: toGeoPoint
                                         ,displayRoutes: displayRoutes
                                         ,displayResources: displayResources
+                                        ,viewTrajectory: viewTrajectory
                                         ,viewCoords: viewCoords
                                         ,viewRoutes: viewRoutes
                                         ,viewResourceCounts: viewResourceCounts
                                         ,viewResources: viewResources
                                         ,getRoutes: getRoutes
                                         ,getResourceCounts: getResourceCounts
+                                        ,getTrajectory: getTrajectory
                                         ,getResources: getResources
                                         ,toMaybeWithLogging: toMaybeWithLogging
                                         ,Coord: Coord
@@ -13567,5 +13680,8 @@ Elm.ResourceDecoder.make = function (_elm) {
                                         ,Route: Route
                                         ,routeCollectionDecoder: routeCollectionDecoder
                                         ,routeDecoder: routeDecoder
-                                        ,geoPointDecoder: geoPointDecoder};
+                                        ,geoPointDecoder: geoPointDecoder
+                                        ,TrajectoryPoint: TrajectoryPoint
+                                        ,trajectoryDecoder: trajectoryDecoder
+                                        ,trajectoryPointDecoder: trajectoryPointDecoder};
 };

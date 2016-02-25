@@ -17,6 +17,7 @@ import GeoUtils exposing (..)
 resourcesUrl = "./resources2.json"
 resourceCountsUrl = "./resource-counts.json"
 routesUrl = "./routes1.json"
+trajectoryUrl = "./trajectory1.json"
 
 getTimeOrigin =
   0
@@ -38,6 +39,7 @@ port tasks =
 
 type Action
   = NoOp
+  | GetTrajectory
   | GetRoutes
   | ShiftTimeForward (Int)
   | ShiftTimeBackward (Int)
@@ -46,23 +48,28 @@ type Action
   | ShowResources (Maybe Resources)
   | ShowResourceCounts (Maybe ResourceCounts)
   | ShowRoutes (Maybe Routes)
+  | ShowTrajectory (Maybe Trajectory)
 
 type alias Model =
   { resources : Maybe Resources
    ,resourceCounts : Maybe ResourceCounts
-   ,routes : Maybe Routes 
+   ,routes : Maybe Routes
+   ,trajectory : Maybe Trajectory 
    ,currentTime : Int}
 
 init =
   ({ resources = Nothing
     ,resourceCounts = Nothing
     ,routes = Nothing
+    ,trajectory = Nothing
     ,currentTime = 0}, Effects.none)
 
 update action model =
   case action of
     NoOp ->
       (model, Effects.none)
+    GetTrajectory ->
+      ({ model | trajectory = Nothing }, getTrajectory)
     GetRoutes ->
       ({ model | routes = Nothing }, getRoutes)
     GetResources ->
@@ -75,6 +82,8 @@ update action model =
       ({ model | resourceCounts = maybeResourceCounts }, Effects.none)
     ShowRoutes maybeRoutes ->
       ({ model | routes = maybeRoutes }, Effects.none)
+    ShowTrajectory maybeTrajectory ->
+      ({ model | trajectory = maybeTrajectory }, Effects.none)
     ShiftTimeForward timeNow ->
       ({ model | currentTime = timeNow}, Effects.none)
     ShiftTimeBackward timeNow ->
@@ -141,11 +150,13 @@ view address model =
     [ button [ onClick address GetResources ] [ text "Click to get resources!" ]
     , button [ onClick address GetResourceCounts ] [ text "Click to get resource counts!" ]
     , button [ onClick address GetRoutes ] [ text "Click to get routes!" ]
+    , button [ onClick address GetTrajectory ] [ text "Click for trajectory!" ]
     , br [][]
     , displayResources model
     , displayRoutes model
     , viewResourceCounts model.resourceCounts
     , viewRoutes model.routes
+    , viewTrajectory model.trajectory
     , button [ onClick address (ShiftTimeForward (model.currentTime + 15)) ] [ text "+15" ]
     , button [ onClick address (ShiftTimeBackward (model.currentTime - 15)) ] [ text "-15" ]
     , text ("current Time: " ++ (toString model.currentTime))
@@ -487,8 +498,32 @@ toPolylines model =
             (minY,maxY) = getYBounds resources
             routeLines = List.map (\r -> toPolyline r minX maxX minY maxY) routes  
             sectorPolygons = toSvgPolygons resources
+            trajectoryLine = trajectoryToPolyline model.trajectory minX maxX minY maxY
           in
-            List.append routeLines sectorPolygons
+            List.append  (List.append routeLines sectorPolygons)[trajectoryLine]
+
+trajectoryToPolyline maybeTrajectory minX maxX minY maxY = 
+  case maybeTrajectory of
+    Nothing ->
+      polyline [points "0,0 100,0", stroke "red", fill "none"][]
+    Just trajectory ->
+      let
+        xypoints = trajectoryToXYPoints trajectory
+        pointString = String.concat (List.map (\p -> ((toDisplayX p.x minX maxX) ++ "," ++ (toDisplayY p.y minY maxY) ++ " ")) xypoints)
+      in
+        polyline [points pointString, stroke "orange", fill "none"][]
+
+trajectoryToXYPoints trajectory =
+  let
+    gpoints = List.map (\p -> toGeoPoint p) trajectory
+  in
+    List.map (\g -> toXYPoint g) gpoints
+
+toGeoPoint trajectoryPoint = 
+  { 
+    latDeg = trajectoryPoint.latDeg
+   ,lonDeg = trajectoryPoint.lonDeg
+  }
 
 displayRoutes model =
   Svg.svg [ width (toString getMapDisplayWidth), 
@@ -510,6 +545,13 @@ displayResources model =
     (toSvgPolygonsOrNothing model))
     ]
 
+viewTrajectory maybeTrajectory =
+  case maybeTrajectory of
+    Nothing ->
+      div [] [ text "No trajectory to display.  Try clicking the button" ]
+    Just trajectory ->
+      div [] [ text ("Found " ++ (toString (List.length trajectory)) ++ " points in trajectory, baby!") ]
+      
 viewCoords coords = 
   List.map (\c -> toString c.latDeg) coords
 
@@ -557,6 +599,14 @@ getResourceCounts =
 
 -- This is the key to map the result of the HTTP GET to an Action
 -- Note: Task.toMaybe swallows any HTTP or JSON decoding errors
+getTrajectory : Effects Action
+getTrajectory = 
+  Http.get trajectoryDecoder trajectoryUrl
+    |> toMaybeWithLogging
+    |> Task.map ShowTrajectory
+    |> Effects.task
+    
+
 getResources : Effects Action
 getResources =
   Http.get decoderColl resourcesUrl
@@ -651,3 +701,23 @@ geoPointDecoder =
   Decode.object2 GeoPoint2D
     ("latDeg" := Decode.float)
     ("lonDeg" := Decode.float)
+
+type alias Trajectory = List TrajectoryPoint
+type alias TrajectoryPoint = {
+   timestamp: Int
+  ,latDeg: Float
+  ,lonDeg: Float
+}
+
+trajectoryDecoder : Decoder Trajectory
+trajectoryDecoder = 
+  Decode.object1 identity
+    ("trajectory" := Decode.list trajectoryPointDecoder)
+
+trajectoryPointDecoder : Decoder TrajectoryPoint
+trajectoryPointDecoder = 
+  Decode.object3 TrajectoryPoint
+    ("timestamp" := Decode.int)
+    ("latDeg" := Decode.float)
+    ("lonDeg" := Decode.float)
+  
