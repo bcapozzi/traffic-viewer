@@ -13557,6 +13557,19 @@ Elm.ResourceDecoder.make = function (_elm) {
       0.8) > 0 ? "#0000FF" : _U.cmp($Basics.toFloat(count) / $Basics.toFloat(maxCount),
       0.5) > 0 ? "#FF00FF" : "#FFFFFF";
    });
+   var determineColor = F3(function (resource,
+   currentTime,
+   crossingTimeSummary) {
+      var isInSector = A3($List.foldl,
+      F2(function (c,tf) {
+         return tf || _U.eq(c.resourceID,
+         resource.id) && (_U.cmp(c.entryTimestamp,
+         currentTime) < 0 && _U.cmp(c.exitTimestamp,currentTime) > 0);
+      }),
+      false,
+      crossingTimeSummary);
+      return isInSector ? "FF0000" : "FFFFFF";
+   });
    var getAllXYPoints = function (resources) {
       return $List.concat(A2($List.map,
       function (r) {
@@ -13658,6 +13671,57 @@ Elm.ResourceDecoder.make = function (_elm) {
       },
       resources);
    };
+   var toSvgPolygonColoredOnEntry = F7(function (resource,
+   minX,
+   maxX,
+   minY,
+   maxY,
+   currentTime,
+   crossingTimeSummary) {
+      var fillColor = A3(determineColor,
+      resource,
+      currentTime,
+      crossingTimeSummary);
+      return A2($Svg.polygon,
+      _U.list([$Svg$Attributes.fillOpacity("0.4")
+              ,$Svg$Attributes.style(A2($Basics._op["++"],
+              "stroke:#FF0000; fill:#",
+              fillColor))
+              ,$Svg$Attributes.points(A5(toPointString,
+              resource,
+              minX,
+              maxX,
+              minY,
+              maxY))]),
+      _U.list([]));
+   });
+   var toSvgPolygonsColoredOnEntry = F3(function (resources,
+   currentTime,
+   maybeCrossingTimeSummary) {
+      var _p22 = maybeCrossingTimeSummary;
+      if (_p22.ctor === "Nothing") {
+            return toSvgPolygons(resources);
+         } else {
+            var _p23 = getYBounds(resources);
+            var minY = _p23._0;
+            var maxY = _p23._1;
+            var _p24 = getXBounds(resources);
+            var minX = _p24._0;
+            var maxX = _p24._1;
+            return A2($List.map,
+            function (r) {
+               return A7(toSvgPolygonColoredOnEntry,
+               r,
+               minX,
+               maxX,
+               minY,
+               maxY,
+               currentTime,
+               _p22._0);
+            },
+            resources);
+         }
+   });
    var toSvgPolygonColoredByCount = F6(function (resource,
    minX,
    maxX,
@@ -13685,12 +13749,12 @@ Elm.ResourceDecoder.make = function (_elm) {
    var toSvgPolygonsColoredByCount = F2(function (resources,
    resourceCounts) {
       var xypoints = getAllXYPoints(resources);
-      var _p22 = findXBounds(xypoints);
-      var minX = _p22._0;
-      var maxX = _p22._1;
-      var _p23 = findYBounds(xypoints);
-      var minY = _p23._0;
-      var maxY = _p23._1;
+      var _p25 = findXBounds(xypoints);
+      var minX = _p25._0;
+      var maxX = _p25._1;
+      var _p26 = findYBounds(xypoints);
+      var minY = _p26._0;
+      var maxY = _p26._1;
       return A2($List.map,
       function (r) {
          return A6(toSvgPolygonColoredByCount,
@@ -13704,16 +13768,16 @@ Elm.ResourceDecoder.make = function (_elm) {
       resources);
    });
    var toSvgPolygonsOrNothing = function (model) {
-      var _p24 = model.resources;
-      if (_p24.ctor === "Nothing") {
+      var _p27 = model.resources;
+      if (_p27.ctor === "Nothing") {
             return _U.list([]);
          } else {
-            var _p26 = _p24._0;
-            var _p25 = model.resourceCounts;
-            if (_p25.ctor === "Nothing") {
-                  return toSvgPolygons(_p26);
+            var _p29 = _p27._0;
+            var _p28 = model.resourceCounts;
+            if (_p28.ctor === "Nothing") {
+                  return toSvgPolygons(_p29);
                } else {
-                  return A2(toSvgPolygonsColoredByCount,_p26,_p25._0);
+                  return A2(toSvgPolygonsColoredByCount,_p29,_p28._0);
                }
          }
    };
@@ -13770,15 +13834,15 @@ Elm.ResourceDecoder.make = function (_elm) {
    maxX,
    minY,
    maxY) {
-      var _p27 = maybeTrajectory;
-      if (_p27.ctor === "Nothing") {
+      var _p30 = maybeTrajectory;
+      if (_p30.ctor === "Nothing") {
             return A2($Svg.polyline,
             _U.list([$Svg$Attributes.points("0,0 100,0")
                     ,$Svg$Attributes.stroke("red")
                     ,$Svg$Attributes.fill("none")]),
             _U.list([]));
          } else {
-            var xypoints = trajectoryToXYPoints(_p27._0);
+            var xypoints = trajectoryToXYPoints(_p30._0);
             var pointString = $String.concat(A2($List.map,
             function (p) {
                return A2($Basics._op["++"],
@@ -13803,8 +13867,8 @@ Elm.ResourceDecoder.make = function (_elm) {
    maxX,
    minY,
    maxY) {
-      var _p28 = maybeTrajectory;
-      if (_p28.ctor === "Nothing") {
+      var _p31 = maybeTrajectory;
+      if (_p31.ctor === "Nothing") {
             return _U.list([A2($Svg.rect,
             _U.list([$Svg$Attributes.x("20")
                     ,$Svg$Attributes.y("20")
@@ -13817,7 +13881,7 @@ Elm.ResourceDecoder.make = function (_elm) {
             function (p) {
                return toXYPoint(toGeoPoint(p));
             },
-            _p28._0);
+            _p31._0);
             return A2($List.map,
             function (p) {
                return A2($Svg.rect,
@@ -13838,8 +13902,8 @@ Elm.ResourceDecoder.make = function (_elm) {
          }
    });
    var toStringList = function (maybeResource) {
-      var _p29 = maybeResource;
-      if (_p29.ctor === "Nothing") {
+      var _p32 = maybeResource;
+      if (_p32.ctor === "Nothing") {
             return _U.list([]);
          } else {
             return A2($List.map,
@@ -13848,15 +13912,15 @@ Elm.ResourceDecoder.make = function (_elm) {
                $Basics.toString(c.latDeg),
                A2($Basics._op["++"],",",$Basics.toString(c.lonDeg)));
             },
-            _p29._0.coords);
+            _p32._0.coords);
          }
    };
    var getNth = F2(function (n,maybeResources) {
-      var _p30 = maybeResources;
-      if (_p30.ctor === "Nothing") {
+      var _p33 = maybeResources;
+      if (_p33.ctor === "Nothing") {
             return $Maybe.Nothing;
          } else {
-            return $List.head(A2($List.drop,n,_p30._0));
+            return $List.head(A2($List.drop,n,_p33._0));
          }
    });
    var toDisplayCount = function (c) {
@@ -13871,11 +13935,11 @@ Elm.ResourceDecoder.make = function (_elm) {
       $Basics.toString(value)) : $Basics.toString(value);
    };
    var convertToFloat = function (rawString) {
-      var _p31 = $String.toFloat(rawString);
-      if (_p31.ctor === "Err") {
+      var _p34 = $String.toFloat(rawString);
+      if (_p34.ctor === "Err") {
             return 0.0;
          } else {
-            return _p31._0;
+            return _p34._0;
          }
    };
    var toLocalTime = F3(function (minTime,
@@ -13885,8 +13949,8 @@ Elm.ResourceDecoder.make = function (_elm) {
       return $Basics.floor(minTime + value * (maxTime - minTime) / 100.0);
    });
    var toPolylines = function (model) {
-      var _p32 = model.routes;
-      if (_p32.ctor === "Nothing") {
+      var _p35 = model.routes;
+      if (_p35.ctor === "Nothing") {
             return _U.list([A2($Svg.line,
             _U.list([$Svg$Attributes.x1("-200")
                     ,$Svg$Attributes.x2("0")
@@ -13895,46 +13959,49 @@ Elm.ResourceDecoder.make = function (_elm) {
                     ,$Svg$Attributes.stroke("black")]),
             _U.list([]))]);
          } else {
-            var _p39 = _p32._0;
-            var _p33 = model.resources;
-            if (_p33.ctor === "Nothing") {
-                  var _p34 = {ctor: "_Tuple2",_0: -1000,_1: 1000};
-                  var minY = _p34._0;
-                  var maxY = _p34._1;
-                  var _p35 = {ctor: "_Tuple2",_0: -1000,_1: 1000};
-                  var minX = _p35._0;
-                  var maxX = _p35._1;
+            var _p42 = _p35._0;
+            var _p36 = model.resources;
+            if (_p36.ctor === "Nothing") {
+                  var _p37 = {ctor: "_Tuple2",_0: -1000,_1: 1000};
+                  var minY = _p37._0;
+                  var maxY = _p37._1;
+                  var _p38 = {ctor: "_Tuple2",_0: -1000,_1: 1000};
+                  var minX = _p38._0;
+                  var maxX = _p38._1;
                   return A2($List.map,
                   function (r) {
                      return A5(toPolyline,r,minX,maxX,minY,maxY);
                   },
-                  _p39);
+                  _p42);
                } else {
-                  var _p38 = _p33._0;
+                  var _p41 = _p36._0;
                   var currentTime = A3(toLocalTime,
                   model.minTimestamp,
                   model.maxTimestamp,
                   model.currentSlider);
+                  var sectorPolygons = A3(toSvgPolygonsColoredOnEntry,
+                  _p41,
+                  currentTime,
+                  model.crossingTimeSummary);
                   var currentPosn = A2(interpolatePosn,
                   model.trajectory,
                   currentTime);
                   var currentXY = toXYPoint(toGeoPoint(currentPosn));
-                  var sectorPolygons = toSvgPolygons(_p38);
-                  var _p36 = getYBounds(_p38);
-                  var minY = _p36._0;
-                  var maxY = _p36._1;
+                  var _p39 = getYBounds(_p41);
+                  var minY = _p39._0;
+                  var maxY = _p39._1;
                   var displayY = $Basics.toString(A3(toDisplayYF,
                   currentXY.y,
                   minY,
                   maxY) - 2);
-                  var _p37 = getXBounds(_p38);
-                  var minX = _p37._0;
-                  var maxX = _p37._1;
+                  var _p40 = getXBounds(_p41);
+                  var minX = _p40._0;
+                  var maxX = _p40._1;
                   var routeLines = A2($List.map,
                   function (r) {
                      return A5(toPolyline,r,minX,maxX,minY,maxY);
                   },
-                  _p39);
+                  _p42);
                   var trajectoryLine = A5(trajectoryToPolyline,
                   model.trajectory,
                   minX,
@@ -14017,17 +14084,17 @@ Elm.ResourceDecoder.make = function (_elm) {
       A2($Basics._op["++"],":",second$))));
    });
    var interleave = F2(function (list1,list2) {
-      var _p40 = list1;
-      if (_p40.ctor === "[]") {
+      var _p43 = list1;
+      if (_p43.ctor === "[]") {
             return list2;
          } else {
-            var _p41 = list2;
-            if (_p41.ctor === "[]") {
+            var _p44 = list2;
+            if (_p44.ctor === "[]") {
                   return list1;
                } else {
                   return A2($List._op["::"],
-                  _p41._0,
-                  A2($List._op["::"],_p40._0,A2(interleave,_p40._1,_p41._1)));
+                  _p44._0,
+                  A2($List._op["::"],_p43._0,A2(interleave,_p43._1,_p44._1)));
                }
          }
    });
@@ -14047,35 +14114,35 @@ Elm.ResourceDecoder.make = function (_elm) {
    };
    var getLastTimestamp = function (trajectory) {
       var reversed = $List.reverse(trajectory);
-      var _p42 = $List.head(reversed);
-      if (_p42.ctor === "Nothing") {
+      var _p45 = $List.head(reversed);
+      if (_p45.ctor === "Nothing") {
             return 6 * 60 * 60 * 1000;
          } else {
-            return $Basics.toFloat(_p42._0.timestamp);
+            return $Basics.toFloat(_p45._0.timestamp);
          }
    };
    var getMaxTimestamp = function (maybeTrajectory) {
-      var _p43 = maybeTrajectory;
-      if (_p43.ctor === "Nothing") {
+      var _p46 = maybeTrajectory;
+      if (_p46.ctor === "Nothing") {
             return 6 * 60 * 60 * 1000;
          } else {
-            return getLastTimestamp(_p43._0);
+            return getLastTimestamp(_p46._0);
          }
    };
    var getFirstTimestamp = function (trajectory) {
-      var _p44 = $List.head(trajectory);
-      if (_p44.ctor === "Nothing") {
+      var _p47 = $List.head(trajectory);
+      if (_p47.ctor === "Nothing") {
             return 0;
          } else {
-            return $Basics.toFloat(_p44._0.timestamp);
+            return $Basics.toFloat(_p47._0.timestamp);
          }
    };
    var getMinTimestamp = function (maybeTrajectory) {
-      var _p45 = maybeTrajectory;
-      if (_p45.ctor === "Nothing") {
+      var _p48 = maybeTrajectory;
+      if (_p48.ctor === "Nothing") {
             return 0;
          } else {
-            return getFirstTimestamp(_p45._0);
+            return getFirstTimestamp(_p48._0);
          }
    };
    var init = {ctor: "_Tuple2"
@@ -14214,8 +14281,8 @@ Elm.ResourceDecoder.make = function (_elm) {
       stairsData));
    });
    var createSparkLineForResource = function (maybeResourceCount) {
-      var _p46 = maybeResourceCount;
-      if (_p46.ctor === "Nothing") {
+      var _p49 = maybeResourceCount;
+      if (_p49.ctor === "Nothing") {
             return A2($Svg.line,
             _U.list([$Svg$Attributes.x1("-200")
                     ,$Svg$Attributes.x2("0")
@@ -14225,7 +14292,7 @@ Elm.ResourceDecoder.make = function (_elm) {
             _U.list([]));
          } else {
             return A2($Svg.polyline,
-            _U.list([$Svg$Attributes.points(A2(toXYPointString,_p46._0,0))
+            _U.list([$Svg$Attributes.points(A2(toXYPointString,_p49._0,0))
                     ,$Svg$Attributes.stroke("blue")
                     ,$Svg$Attributes.fill("none")]),
             _U.list([]));
@@ -14260,15 +14327,15 @@ Elm.ResourceDecoder.make = function (_elm) {
       createTicks))]));
    });
    var toSvgs = F2(function (maybeResourceCounts,refTime) {
-      var _p47 = maybeResourceCounts;
-      if (_p47.ctor === "Nothing") {
+      var _p50 = maybeResourceCounts;
+      if (_p50.ctor === "Nothing") {
             return _U.list([]);
          } else {
             return A2($List.map,
             function (r) {
                return A2(createCountSvg,r,refTime);
             },
-            _p47._0);
+            _p50._0);
          }
    });
    var view = F2(function (address,model) {
@@ -14365,8 +14432,8 @@ Elm.ResourceDecoder.make = function (_elm) {
    ShowResources,
    toMaybeWithLogging(A2($Http.get,decoderColl,resourcesUrl))));
    var update = F2(function (action,model) {
-      var _p48 = action;
-      switch (_p48.ctor)
+      var _p51 = action;
+      switch (_p51.ctor)
       {case "NoOp": return {ctor: "_Tuple2"
                            ,_0: model
                            ,_1: $Effects.none};
@@ -14386,32 +14453,32 @@ Elm.ResourceDecoder.make = function (_elm) {
                                           ,_0: _U.update(model,{resourceCounts: $Maybe.Nothing})
                                           ,_1: getResourceCounts};
          case "ShowResources": return {ctor: "_Tuple2"
-                                      ,_0: _U.update(model,{resources: _p48._0})
+                                      ,_0: _U.update(model,{resources: _p51._0})
                                       ,_1: $Effects.none};
          case "ShowResourceCounts": return {ctor: "_Tuple2"
-                                           ,_0: _U.update(model,{resourceCounts: _p48._0})
+                                           ,_0: _U.update(model,{resourceCounts: _p51._0})
                                            ,_1: $Effects.none};
          case "ShowRoutes": return {ctor: "_Tuple2"
-                                   ,_0: _U.update(model,{routes: _p48._0})
+                                   ,_0: _U.update(model,{routes: _p51._0})
                                    ,_1: $Effects.none};
-         case "ShowTrajectory": var _p49 = _p48._0;
+         case "ShowTrajectory": var _p52 = _p51._0;
            return {ctor: "_Tuple2"
                   ,_0: _U.update(model,
-                  {trajectory: _p49
-                  ,minTimestamp: getMinTimestamp(_p49)
-                  ,maxTimestamp: getMaxTimestamp(_p49)})
+                  {trajectory: _p52
+                  ,minTimestamp: getMinTimestamp(_p52)
+                  ,maxTimestamp: getMaxTimestamp(_p52)})
                   ,_1: $Effects.none};
          case "ShowCrossingTimeSummary": return {ctor: "_Tuple2"
-                                                ,_0: _U.update(model,{crossingTimeSummary: _p48._0})
+                                                ,_0: _U.update(model,{crossingTimeSummary: _p51._0})
                                                 ,_1: $Effects.none};
          case "ShiftTimeForward": return {ctor: "_Tuple2"
-                                         ,_0: _U.update(model,{currentTime: _p48._0})
+                                         ,_0: _U.update(model,{currentTime: _p51._0})
                                          ,_1: $Effects.none};
          case "ShiftTimeBackward": return {ctor: "_Tuple2"
-                                          ,_0: _U.update(model,{currentTime: _p48._0})
+                                          ,_0: _U.update(model,{currentTime: _p51._0})
                                           ,_1: $Effects.none};
          default: return {ctor: "_Tuple2"
-                         ,_0: _U.update(model,{currentSlider: _p48._0})
+                         ,_0: _U.update(model,{currentSlider: _p51._0})
                          ,_1: $Effects.none};}
    });
    var app = $StartApp.start({init: init
@@ -14490,6 +14557,9 @@ Elm.ResourceDecoder.make = function (_elm) {
                                         ,getXBounds: getXBounds
                                         ,getYBounds: getYBounds
                                         ,toSvgPolygons: toSvgPolygons
+                                        ,toSvgPolygonsColoredOnEntry: toSvgPolygonsColoredOnEntry
+                                        ,determineColor: determineColor
+                                        ,toSvgPolygonColoredOnEntry: toSvgPolygonColoredOnEntry
                                         ,getCountValue: getCountValue
                                         ,getMaxCountForResource: getMaxCountForResource
                                         ,getMaxCount: getMaxCount

@@ -407,6 +407,33 @@ toSvgPolygons resources =
   in
   List.map (\r -> (toSvgPolygon r minX maxX minY maxY)) resources
 
+toSvgPolygonsColoredOnEntry resources currentTime maybeCrossingTimeSummary =
+  case maybeCrossingTimeSummary of
+    Nothing ->
+      toSvgPolygons resources
+    Just crossingTimeSummary ->
+      let 
+        (minX,maxX) = getXBounds resources
+        (minY,maxY) = getYBounds resources
+      in
+        List.map (\r -> (toSvgPolygonColoredOnEntry r minX maxX minY maxY currentTime crossingTimeSummary)) resources
+
+determineColor resource currentTime crossingTimeSummary =
+  let 
+    isInSector = List.foldl (\c tf -> tf || (c.resourceID == resource.id && c.entryTimestamp < currentTime && c.exitTimestamp > currentTime)) False crossingTimeSummary
+  in
+    if (isInSector) then
+      "FF0000"
+    else
+      "FFFFFF"
+
+toSvgPolygonColoredOnEntry resource minX maxX minY maxY currentTime crossingTimeSummary =
+  let
+    fillColor = determineColor resource currentTime crossingTimeSummary
+  in
+    polygon [fillOpacity "0.4", SA.style ("stroke:#FF0000; fill:#" ++ fillColor), points (toPointString resource minX maxX minY maxY) ] []
+
+
 getCountValue maybeValue = 
    case maybeValue of 
      Nothing ->
@@ -610,11 +637,11 @@ toPolylines model =
           let
             (minX,maxX) = getXBounds resources
             (minY,maxY) = getYBounds resources
+            currentTime = toLocalTime model.minTimestamp model.maxTimestamp model.currentSlider
             routeLines = List.map (\r -> toPolyline r minX maxX minY maxY) routes  
-            sectorPolygons = toSvgPolygons resources
+            sectorPolygons = toSvgPolygonsColoredOnEntry resources currentTime model.crossingTimeSummary
             trajectoryLine = trajectoryToPolyline model.trajectory minX maxX minY maxY
             trajectoryWaypoints = trajectoryToCircles model.trajectory minX maxX minY maxY
-            currentTime = toLocalTime model.minTimestamp model.maxTimestamp model.currentSlider
             currentPosn = interpolatePosn model.trajectory currentTime
             currentXY = toXYPoint (toGeoPoint currentPosn)
             displayX = toString ((toDisplayXF currentXY.x minX maxX)-2)
