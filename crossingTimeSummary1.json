@@ -1,0 +1,94 @@
+{ "crossingTimeSummary" : [
+  {"resourceID" : "ZTL-S42-30000",
+   "entryTimestamp" : 3336125,
+   "exitTimestamp" : 4347036
+   },
+  {"resourceID" : "ZTL-S43-24000",
+   "entryTimestamp" : 3336125,
+   "exitTimestamp" : 4347036
+   },
+  {"resourceID" : "ZTL-S45-6100",
+   "entryTimestamp" : 3336125,
+   "exitTimestamp" : 3528118
+   },
+  {"resourceID" : "ZTL-S45-10100",
+   "entryTimestamp" : 3336125,
+   "exitTimestamp" : 3528118
+   },
+  {"resourceID" : "ZTL-S45-12100",
+   "entryTimestamp" : 3336125,
+   "exitTimestamp" : 3528118
+   },
+  {"resourceID" : "ZTL-S47-10600",
+   "entryTimestamp" : 3528117,
+   "exitTimestamp" : 3981668
+   },
+  {"resourceID" : "ZTL-S47-14100",
+   "entryTimestamp" : 3528117,
+   "exitTimestamp" : 3981668
+   },
+  {"resourceID" : "ZTL-S48-0",
+   "entryTimestamp" : 3528117,
+   "exitTimestamp" : 4314712
+   },
+  {"resourceID" : "ZTL-S48-4900",
+   "entryTimestamp" : 3528117,
+   "exitTimestamp" : 4314712
+   },
+  {"resourceID" : "ZTL-S48-5100",
+   "entryTimestamp" : 3528117,
+   "exitTimestamp" : 4328525
+   },
+  {"resourceID" : "ZTL-S44-10600",
+   "entryTimestamp" : 3981667,
+   "exitTimestamp" : 4546165
+   },
+  {"resourceID" : "ZTL-S44-14100",
+   "entryTimestamp" : 3981667,
+   "exitTimestamp" : 4546165
+   },
+  {"resourceID" : "ZTL-S44-10100",
+   "entryTimestamp" : 4328524,
+   "exitTimestamp" : 4546165
+   },
+  {"resourceID" : "ZTL-S50-24000",
+   "entryTimestamp" : 4347035,
+   "exitTimestamp" : 5397964
+   },
+  {"resourceID" : "ZTL-S31-10100",
+   "entryTimestamp" : 4546164,
+   "exitTimestamp" : 4575518
+   },
+  {"resourceID" : "ZTL-S31-14100",
+   "entryTimestamp" : 4546164,
+   "exitTimestamp" : 4575518
+   },
+  {"resourceID" : "ZTL-S49-10100",
+   "entryTimestamp" : 4575517,
+   "exitTimestamp" : 5374958
+   },
+  {"resourceID" : "ZTL-S49-12100",
+   "entryTimestamp" : 4575517,
+   "exitTimestamp" : 5374958
+   },
+  {"resourceID" : "ZTL-S49-14100",
+   "entryTimestamp" : 4575517,
+   "exitTimestamp" : 5514731
+   },
+  {"resourceID" : "ZTL-S18-0",
+   "entryTimestamp" : 4664286,
+   "exitTimestamp" : 5197941
+   },
+  {"resourceID" : "ZTL-S18-6100",
+   "entryTimestamp" : 4664286,
+   "exitTimestamp" : 5374958
+   },
+  {"resourceID" : "ZTL-S32-24000",
+   "entryTimestamp" : 5397963,
+   "exitTimestamp" : 5524714
+   },
+  {"resourceID" : "ZTL-S16-14100",
+   "entryTimestamp" : 5514730,
+   "exitTimestamp" : 5662259
+   }
+]}

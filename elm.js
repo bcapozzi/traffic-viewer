@@ -3476,6 +3476,46 @@ Elm.Color.make = function (_elm) {
                               ,gray: gray
                               ,darkGray: darkGray};
 };
+Elm.Native.Date = {};
+Elm.Native.Date.make = function(localRuntime) {
+	localRuntime.Native = localRuntime.Native || {};
+	localRuntime.Native.Date = localRuntime.Native.Date || {};
+	if (localRuntime.Native.Date.values)
+	{
+		return localRuntime.Native.Date.values;
+	}
+
+	var Result = Elm.Result.make(localRuntime);
+
+	function readDate(str)
+	{
+		var date = new Date(str);
+		return isNaN(date.getTime())
+			? Result.Err('unable to parse \'' + str + '\' as a date')
+			: Result.Ok(date);
+	}
+
+	var dayTable = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+	var monthTable =
+		['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+		 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+
+	return localRuntime.Native.Date.values = {
+		read: readDate,
+		year: function(d) { return d.getFullYear(); },
+		month: function(d) { return { ctor: monthTable[d.getMonth()] }; },
+		day: function(d) { return d.getDate(); },
+		hour: function(d) { return d.getHours(); },
+		minute: function(d) { return d.getMinutes(); },
+		second: function(d) { return d.getSeconds(); },
+		millisecond: function(d) { return d.getMilliseconds(); },
+		toTime: function(d) { return d.getTime(); },
+		fromTime: function(t) { return new Date(t); },
+		dayOfWeek: function(d) { return { ctor: dayTable[d.getDay()] }; }
+	};
+};
+
 Elm.Native.Signal = {};
 
 Elm.Native.Signal.make = function(localRuntime) {
@@ -7307,6 +7347,79 @@ Elm.Time.make = function (_elm) {
                              ,timestamp: timestamp
                              ,delay: delay
                              ,since: since};
+};
+Elm.Date = Elm.Date || {};
+Elm.Date.make = function (_elm) {
+   "use strict";
+   _elm.Date = _elm.Date || {};
+   if (_elm.Date.values) return _elm.Date.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Native$Date = Elm.Native.Date.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Time = Elm.Time.make(_elm);
+   var _op = {};
+   var millisecond = $Native$Date.millisecond;
+   var second = $Native$Date.second;
+   var minute = $Native$Date.minute;
+   var hour = $Native$Date.hour;
+   var dayOfWeek = $Native$Date.dayOfWeek;
+   var day = $Native$Date.day;
+   var month = $Native$Date.month;
+   var year = $Native$Date.year;
+   var fromTime = $Native$Date.fromTime;
+   var toTime = $Native$Date.toTime;
+   var fromString = $Native$Date.read;
+   var Dec = {ctor: "Dec"};
+   var Nov = {ctor: "Nov"};
+   var Oct = {ctor: "Oct"};
+   var Sep = {ctor: "Sep"};
+   var Aug = {ctor: "Aug"};
+   var Jul = {ctor: "Jul"};
+   var Jun = {ctor: "Jun"};
+   var May = {ctor: "May"};
+   var Apr = {ctor: "Apr"};
+   var Mar = {ctor: "Mar"};
+   var Feb = {ctor: "Feb"};
+   var Jan = {ctor: "Jan"};
+   var Sun = {ctor: "Sun"};
+   var Sat = {ctor: "Sat"};
+   var Fri = {ctor: "Fri"};
+   var Thu = {ctor: "Thu"};
+   var Wed = {ctor: "Wed"};
+   var Tue = {ctor: "Tue"};
+   var Mon = {ctor: "Mon"};
+   var Date = {ctor: "Date"};
+   return _elm.Date.values = {_op: _op
+                             ,fromString: fromString
+                             ,toTime: toTime
+                             ,fromTime: fromTime
+                             ,year: year
+                             ,month: month
+                             ,day: day
+                             ,dayOfWeek: dayOfWeek
+                             ,hour: hour
+                             ,minute: minute
+                             ,second: second
+                             ,millisecond: millisecond
+                             ,Jan: Jan
+                             ,Feb: Feb
+                             ,Mar: Mar
+                             ,Apr: Apr
+                             ,May: May
+                             ,Jun: Jun
+                             ,Jul: Jul
+                             ,Aug: Aug
+                             ,Sep: Sep
+                             ,Oct: Oct
+                             ,Nov: Nov
+                             ,Dec: Dec
+                             ,Mon: Mon
+                             ,Tue: Tue
+                             ,Wed: Wed
+                             ,Thu: Thu
+                             ,Fri: Fri
+                             ,Sat: Sat
+                             ,Sun: Sun};
 };
 Elm.Native.String = {};
 
@@ -11231,6 +11344,437 @@ Elm.Html.make = function (_elm) {
                              ,menu: menu};
 };
 Elm.Html = Elm.Html || {};
+Elm.Html.Attributes = Elm.Html.Attributes || {};
+Elm.Html.Attributes.make = function (_elm) {
+   "use strict";
+   _elm.Html = _elm.Html || {};
+   _elm.Html.Attributes = _elm.Html.Attributes || {};
+   if (_elm.Html.Attributes.values)
+   return _elm.Html.Attributes.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Html = Elm.Html.make(_elm),
+   $Json$Encode = Elm.Json.Encode.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $String = Elm.String.make(_elm),
+   $VirtualDom = Elm.VirtualDom.make(_elm);
+   var _op = {};
+   var attribute = $VirtualDom.attribute;
+   var contextmenu = function (value) {
+      return A2(attribute,"contextmenu",value);
+   };
+   var property = $VirtualDom.property;
+   var stringProperty = F2(function (name,string) {
+      return A2(property,name,$Json$Encode.string(string));
+   });
+   var $class = function (name) {
+      return A2(stringProperty,"className",name);
+   };
+   var id = function (name) {
+      return A2(stringProperty,"id",name);
+   };
+   var title = function (name) {
+      return A2(stringProperty,"title",name);
+   };
+   var accesskey = function ($char) {
+      return A2(stringProperty,
+      "accessKey",
+      $String.fromChar($char));
+   };
+   var dir = function (value) {
+      return A2(stringProperty,"dir",value);
+   };
+   var draggable = function (value) {
+      return A2(stringProperty,"draggable",value);
+   };
+   var dropzone = function (value) {
+      return A2(stringProperty,"dropzone",value);
+   };
+   var itemprop = function (value) {
+      return A2(stringProperty,"itemprop",value);
+   };
+   var lang = function (value) {
+      return A2(stringProperty,"lang",value);
+   };
+   var tabindex = function (n) {
+      return A2(stringProperty,"tabIndex",$Basics.toString(n));
+   };
+   var charset = function (value) {
+      return A2(stringProperty,"charset",value);
+   };
+   var content = function (value) {
+      return A2(stringProperty,"content",value);
+   };
+   var httpEquiv = function (value) {
+      return A2(stringProperty,"httpEquiv",value);
+   };
+   var language = function (value) {
+      return A2(stringProperty,"language",value);
+   };
+   var src = function (value) {
+      return A2(stringProperty,"src",value);
+   };
+   var height = function (value) {
+      return A2(stringProperty,"height",$Basics.toString(value));
+   };
+   var width = function (value) {
+      return A2(stringProperty,"width",$Basics.toString(value));
+   };
+   var alt = function (value) {
+      return A2(stringProperty,"alt",value);
+   };
+   var preload = function (value) {
+      return A2(stringProperty,"preload",value);
+   };
+   var poster = function (value) {
+      return A2(stringProperty,"poster",value);
+   };
+   var kind = function (value) {
+      return A2(stringProperty,"kind",value);
+   };
+   var srclang = function (value) {
+      return A2(stringProperty,"srclang",value);
+   };
+   var sandbox = function (value) {
+      return A2(stringProperty,"sandbox",value);
+   };
+   var srcdoc = function (value) {
+      return A2(stringProperty,"srcdoc",value);
+   };
+   var type$ = function (value) {
+      return A2(stringProperty,"type",value);
+   };
+   var value = function (value) {
+      return A2(stringProperty,"value",value);
+   };
+   var placeholder = function (value) {
+      return A2(stringProperty,"placeholder",value);
+   };
+   var accept = function (value) {
+      return A2(stringProperty,"accept",value);
+   };
+   var acceptCharset = function (value) {
+      return A2(stringProperty,"acceptCharset",value);
+   };
+   var action = function (value) {
+      return A2(stringProperty,"action",value);
+   };
+   var autocomplete = function (bool) {
+      return A2(stringProperty,"autocomplete",bool ? "on" : "off");
+   };
+   var autosave = function (value) {
+      return A2(stringProperty,"autosave",value);
+   };
+   var enctype = function (value) {
+      return A2(stringProperty,"enctype",value);
+   };
+   var formaction = function (value) {
+      return A2(stringProperty,"formAction",value);
+   };
+   var list = function (value) {
+      return A2(stringProperty,"list",value);
+   };
+   var minlength = function (n) {
+      return A2(stringProperty,"minLength",$Basics.toString(n));
+   };
+   var maxlength = function (n) {
+      return A2(stringProperty,"maxLength",$Basics.toString(n));
+   };
+   var method = function (value) {
+      return A2(stringProperty,"method",value);
+   };
+   var name = function (value) {
+      return A2(stringProperty,"name",value);
+   };
+   var pattern = function (value) {
+      return A2(stringProperty,"pattern",value);
+   };
+   var size = function (n) {
+      return A2(stringProperty,"size",$Basics.toString(n));
+   };
+   var $for = function (value) {
+      return A2(stringProperty,"htmlFor",value);
+   };
+   var form = function (value) {
+      return A2(stringProperty,"form",value);
+   };
+   var max = function (value) {
+      return A2(stringProperty,"max",value);
+   };
+   var min = function (value) {
+      return A2(stringProperty,"min",value);
+   };
+   var step = function (n) {
+      return A2(stringProperty,"step",n);
+   };
+   var cols = function (n) {
+      return A2(stringProperty,"cols",$Basics.toString(n));
+   };
+   var rows = function (n) {
+      return A2(stringProperty,"rows",$Basics.toString(n));
+   };
+   var wrap = function (value) {
+      return A2(stringProperty,"wrap",value);
+   };
+   var usemap = function (value) {
+      return A2(stringProperty,"useMap",value);
+   };
+   var shape = function (value) {
+      return A2(stringProperty,"shape",value);
+   };
+   var coords = function (value) {
+      return A2(stringProperty,"coords",value);
+   };
+   var challenge = function (value) {
+      return A2(stringProperty,"challenge",value);
+   };
+   var keytype = function (value) {
+      return A2(stringProperty,"keytype",value);
+   };
+   var align = function (value) {
+      return A2(stringProperty,"align",value);
+   };
+   var cite = function (value) {
+      return A2(stringProperty,"cite",value);
+   };
+   var href = function (value) {
+      return A2(stringProperty,"href",value);
+   };
+   var target = function (value) {
+      return A2(stringProperty,"target",value);
+   };
+   var downloadAs = function (value) {
+      return A2(stringProperty,"download",value);
+   };
+   var hreflang = function (value) {
+      return A2(stringProperty,"hreflang",value);
+   };
+   var media = function (value) {
+      return A2(stringProperty,"media",value);
+   };
+   var ping = function (value) {
+      return A2(stringProperty,"ping",value);
+   };
+   var rel = function (value) {
+      return A2(stringProperty,"rel",value);
+   };
+   var datetime = function (value) {
+      return A2(stringProperty,"datetime",value);
+   };
+   var pubdate = function (value) {
+      return A2(stringProperty,"pubdate",value);
+   };
+   var start = function (n) {
+      return A2(stringProperty,"start",$Basics.toString(n));
+   };
+   var colspan = function (n) {
+      return A2(stringProperty,"colSpan",$Basics.toString(n));
+   };
+   var headers = function (value) {
+      return A2(stringProperty,"headers",value);
+   };
+   var rowspan = function (n) {
+      return A2(stringProperty,"rowSpan",$Basics.toString(n));
+   };
+   var scope = function (value) {
+      return A2(stringProperty,"scope",value);
+   };
+   var manifest = function (value) {
+      return A2(stringProperty,"manifest",value);
+   };
+   var boolProperty = F2(function (name,bool) {
+      return A2(property,name,$Json$Encode.bool(bool));
+   });
+   var hidden = function (bool) {
+      return A2(boolProperty,"hidden",bool);
+   };
+   var contenteditable = function (bool) {
+      return A2(boolProperty,"contentEditable",bool);
+   };
+   var spellcheck = function (bool) {
+      return A2(boolProperty,"spellcheck",bool);
+   };
+   var async = function (bool) {
+      return A2(boolProperty,"async",bool);
+   };
+   var defer = function (bool) {
+      return A2(boolProperty,"defer",bool);
+   };
+   var scoped = function (bool) {
+      return A2(boolProperty,"scoped",bool);
+   };
+   var autoplay = function (bool) {
+      return A2(boolProperty,"autoplay",bool);
+   };
+   var controls = function (bool) {
+      return A2(boolProperty,"controls",bool);
+   };
+   var loop = function (bool) {
+      return A2(boolProperty,"loop",bool);
+   };
+   var $default = function (bool) {
+      return A2(boolProperty,"default",bool);
+   };
+   var seamless = function (bool) {
+      return A2(boolProperty,"seamless",bool);
+   };
+   var checked = function (bool) {
+      return A2(boolProperty,"checked",bool);
+   };
+   var selected = function (bool) {
+      return A2(boolProperty,"selected",bool);
+   };
+   var autofocus = function (bool) {
+      return A2(boolProperty,"autofocus",bool);
+   };
+   var disabled = function (bool) {
+      return A2(boolProperty,"disabled",bool);
+   };
+   var multiple = function (bool) {
+      return A2(boolProperty,"multiple",bool);
+   };
+   var novalidate = function (bool) {
+      return A2(boolProperty,"noValidate",bool);
+   };
+   var readonly = function (bool) {
+      return A2(boolProperty,"readOnly",bool);
+   };
+   var required = function (bool) {
+      return A2(boolProperty,"required",bool);
+   };
+   var ismap = function (value) {
+      return A2(boolProperty,"isMap",value);
+   };
+   var download = function (bool) {
+      return A2(boolProperty,"download",bool);
+   };
+   var reversed = function (bool) {
+      return A2(boolProperty,"reversed",bool);
+   };
+   var classList = function (list) {
+      return $class(A2($String.join,
+      " ",
+      A2($List.map,$Basics.fst,A2($List.filter,$Basics.snd,list))));
+   };
+   var style = function (props) {
+      return A2(property,
+      "style",
+      $Json$Encode.object(A2($List.map,
+      function (_p0) {
+         var _p1 = _p0;
+         return {ctor: "_Tuple2"
+                ,_0: _p1._0
+                ,_1: $Json$Encode.string(_p1._1)};
+      },
+      props)));
+   };
+   var key = function (k) {    return A2(stringProperty,"key",k);};
+   return _elm.Html.Attributes.values = {_op: _op
+                                        ,key: key
+                                        ,style: style
+                                        ,$class: $class
+                                        ,classList: classList
+                                        ,id: id
+                                        ,title: title
+                                        ,hidden: hidden
+                                        ,type$: type$
+                                        ,value: value
+                                        ,checked: checked
+                                        ,placeholder: placeholder
+                                        ,selected: selected
+                                        ,accept: accept
+                                        ,acceptCharset: acceptCharset
+                                        ,action: action
+                                        ,autocomplete: autocomplete
+                                        ,autofocus: autofocus
+                                        ,autosave: autosave
+                                        ,disabled: disabled
+                                        ,enctype: enctype
+                                        ,formaction: formaction
+                                        ,list: list
+                                        ,maxlength: maxlength
+                                        ,minlength: minlength
+                                        ,method: method
+                                        ,multiple: multiple
+                                        ,name: name
+                                        ,novalidate: novalidate
+                                        ,pattern: pattern
+                                        ,readonly: readonly
+                                        ,required: required
+                                        ,size: size
+                                        ,$for: $for
+                                        ,form: form
+                                        ,max: max
+                                        ,min: min
+                                        ,step: step
+                                        ,cols: cols
+                                        ,rows: rows
+                                        ,wrap: wrap
+                                        ,href: href
+                                        ,target: target
+                                        ,download: download
+                                        ,downloadAs: downloadAs
+                                        ,hreflang: hreflang
+                                        ,media: media
+                                        ,ping: ping
+                                        ,rel: rel
+                                        ,ismap: ismap
+                                        ,usemap: usemap
+                                        ,shape: shape
+                                        ,coords: coords
+                                        ,src: src
+                                        ,height: height
+                                        ,width: width
+                                        ,alt: alt
+                                        ,autoplay: autoplay
+                                        ,controls: controls
+                                        ,loop: loop
+                                        ,preload: preload
+                                        ,poster: poster
+                                        ,$default: $default
+                                        ,kind: kind
+                                        ,srclang: srclang
+                                        ,sandbox: sandbox
+                                        ,seamless: seamless
+                                        ,srcdoc: srcdoc
+                                        ,reversed: reversed
+                                        ,start: start
+                                        ,align: align
+                                        ,colspan: colspan
+                                        ,rowspan: rowspan
+                                        ,headers: headers
+                                        ,scope: scope
+                                        ,async: async
+                                        ,charset: charset
+                                        ,content: content
+                                        ,defer: defer
+                                        ,httpEquiv: httpEquiv
+                                        ,language: language
+                                        ,scoped: scoped
+                                        ,accesskey: accesskey
+                                        ,contenteditable: contenteditable
+                                        ,contextmenu: contextmenu
+                                        ,dir: dir
+                                        ,draggable: draggable
+                                        ,dropzone: dropzone
+                                        ,itemprop: itemprop
+                                        ,lang: lang
+                                        ,spellcheck: spellcheck
+                                        ,tabindex: tabindex
+                                        ,challenge: challenge
+                                        ,keytype: keytype
+                                        ,cite: cite
+                                        ,datetime: datetime
+                                        ,pubdate: pubdate
+                                        ,manifest: manifest
+                                        ,property: property
+                                        ,attribute: attribute};
+};
+Elm.Html = Elm.Html || {};
 Elm.Html.Events = Elm.Html.Events || {};
 Elm.Html.Events.make = function (_elm) {
    "use strict";
@@ -12560,10 +13104,12 @@ Elm.ResourceDecoder.make = function (_elm) {
    return _elm.ResourceDecoder.values;
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
+   $Date = Elm.Date.make(_elm),
    $Debug = Elm.Debug.make(_elm),
    $Effects = Elm.Effects.make(_elm),
    $GeoUtils = Elm.GeoUtils.make(_elm),
    $Html = Elm.Html.make(_elm),
+   $Html$Attributes = Elm.Html.Attributes.make(_elm),
    $Html$Events = Elm.Html.Events.make(_elm),
    $Http = Elm.Http.make(_elm),
    $Json$Decode = Elm.Json.Decode.make(_elm),
@@ -12575,8 +13121,22 @@ Elm.ResourceDecoder.make = function (_elm) {
    $String = Elm.String.make(_elm),
    $Svg = Elm.Svg.make(_elm),
    $Svg$Attributes = Elm.Svg.Attributes.make(_elm),
-   $Task = Elm.Task.make(_elm);
+   $Task = Elm.Task.make(_elm),
+   $Time = Elm.Time.make(_elm);
    var _op = {};
+   var CrossingTime = F3(function (a,b,c) {
+      return {resourceID: a,entryTimestamp: b,exitTimestamp: c};
+   });
+   var crossingTimeDecoder = A4($Json$Decode.object3,
+   CrossingTime,
+   A2($Json$Decode._op[":="],"resourceID",$Json$Decode.string),
+   A2($Json$Decode._op[":="],"entryTimestamp",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"exitTimestamp",$Json$Decode.$int));
+   var crossingTimeSummaryDecoder = A2($Json$Decode.object1,
+   $Basics.identity,
+   A2($Json$Decode._op[":="],
+   "crossingTimeSummary",
+   $Json$Decode.list(crossingTimeDecoder)));
    var TrajectoryPoint = F3(function (a,b,c) {
       return {timestamp: a,latDeg: b,lonDeg: c};
    });
@@ -12740,10 +13300,74 @@ Elm.ResourceDecoder.make = function (_elm) {
             " points in trajectory, baby!")))]));
          }
    };
+   var viewCrossingTimeSummary = function (maybeCrossingTimeSummary) {
+      var _p4 = maybeCrossingTimeSummary;
+      if (_p4.ctor === "Nothing") {
+            return A2($Html.div,
+            _U.list([]),
+            _U.list([$Html.text("No crossing time summary to display.  Try clicking the button")]));
+         } else {
+            return A2($Html.div,
+            _U.list([]),
+            _U.list([$Html.text(A2($Basics._op["++"],
+            "Found ",
+            A2($Basics._op["++"],
+            $Basics.toString($List.length(_p4._0)),
+            " crossings in summary, baby!")))]));
+         }
+   };
    var toGeoPoint = function (trajectoryPoint) {
       return {latDeg: trajectoryPoint.latDeg
              ,lonDeg: trajectoryPoint.lonDeg};
    };
+   var getPointAfter = F2(function (laterPoints,trajectory) {
+      return $List.isEmpty(laterPoints) ? $List.head(trajectory) : $List.head(laterPoints);
+   });
+   var getPointBefore = F2(function (earlierPoints,trajectory) {
+      return $List.isEmpty(earlierPoints) ? $List.head(trajectory) : $List.head(A2($List.drop,
+      $List.length(earlierPoints) - 1,
+      earlierPoints));
+   });
+   var interpolatePosn = F2(function (maybeTrajectory,
+   currentTime) {
+      var _p5 = maybeTrajectory;
+      if (_p5.ctor === "Nothing") {
+            return {timestamp: 0,latDeg: 0.0,lonDeg: 0.0};
+         } else {
+            var _p10 = _p5._0;
+            var laterPoints = A2($List.filter,
+            function (p) {
+               return _U.cmp(p.timestamp,currentTime) > -1;
+            },
+            _p10);
+            var nextPoint = A2(getPointAfter,laterPoints,_p10);
+            var earlierPoints = A2($List.filter,
+            function (p) {
+               return _U.cmp(p.timestamp,currentTime) < 0;
+            },
+            _p10);
+            var prevPoint = A2(getPointBefore,earlierPoints,_p10);
+            var _p6 = prevPoint;
+            if (_p6.ctor === "Nothing") {
+                  return {timestamp: 0,latDeg: 0.0,lonDeg: 0.0};
+               } else {
+                  var _p9 = _p6._0;
+                  var _p7 = nextPoint;
+                  if (_p7.ctor === "Nothing") {
+                        return {timestamp: 0,latDeg: 0.0,lonDeg: 0.0};
+                     } else {
+                        var _p8 = _p7._0;
+                        var dlon = _p8.lonDeg - _p9.lonDeg;
+                        var dlat = _p8.latDeg - _p9.latDeg;
+                        var dt = _p8.timestamp - _p9.timestamp;
+                        var dt$ = currentTime - _p9.timestamp;
+                        var lat$ = _p9.latDeg + dlat / $Basics.toFloat(dt) * $Basics.toFloat(dt$);
+                        var lon$ = _p9.lonDeg + dlon / $Basics.toFloat(dt) * $Basics.toFloat(dt$);
+                        return {timestamp: currentTime,latDeg: lat$,lonDeg: lon$};
+                     }
+               }
+         }
+   });
    var getMinRouteY = function (route) {
       var yvals = A2($List.map,
       function (p) {
@@ -12751,11 +13375,11 @@ Elm.ResourceDecoder.make = function (_elm) {
       },
       route.points);
       var ymin = $List.minimum(yvals);
-      var _p4 = ymin;
-      if (_p4.ctor === "Nothing") {
+      var _p11 = ymin;
+      if (_p11.ctor === "Nothing") {
             return 0;
          } else {
-            return _p4._0;
+            return _p11._0;
          }
    };
    var getMaxRouteY = function (route) {
@@ -12765,19 +13389,19 @@ Elm.ResourceDecoder.make = function (_elm) {
       },
       route.points);
       var ymax = $List.maximum(yvals);
-      var _p5 = ymax;
-      if (_p5.ctor === "Nothing") {
+      var _p12 = ymax;
+      if (_p12.ctor === "Nothing") {
             return 0;
          } else {
-            return _p5._0;
+            return _p12._0;
          }
    };
    var getValueForBound = function (maybeValue) {
-      var _p6 = maybeValue;
-      if (_p6.ctor === "Nothing") {
+      var _p13 = maybeValue;
+      if (_p13.ctor === "Nothing") {
             return 0;
          } else {
-            return _p6._0;
+            return _p13._0;
          }
    };
    var getRouteYBounds = function (routes) {
@@ -12802,11 +13426,11 @@ Elm.ResourceDecoder.make = function (_elm) {
       },
       route.points);
       var xmin = $List.minimum(xvals);
-      var _p7 = xmin;
-      if (_p7.ctor === "Nothing") {
+      var _p14 = xmin;
+      if (_p14.ctor === "Nothing") {
             return 0;
          } else {
-            return _p7._0;
+            return _p14._0;
          }
    };
    var getMaxRouteX = function (route) {
@@ -12816,11 +13440,11 @@ Elm.ResourceDecoder.make = function (_elm) {
       },
       route.points);
       var xmax = $List.maximum(xvals);
-      var _p8 = xmax;
-      if (_p8.ctor === "Nothing") {
+      var _p15 = xmax;
+      if (_p15.ctor === "Nothing") {
             return 0;
          } else {
-            return _p8._0;
+            return _p15._0;
          }
    };
    var getRouteXBounds = function (routes) {
@@ -12844,11 +13468,11 @@ Elm.ResourceDecoder.make = function (_elm) {
    var getRefPoint = {latDeg: 33.637,lonDeg: 84.2567};
    var toXYPoint = function (p) {
       var refPoint = getRefPoint;
-      var _p9 = A2($GeoUtils.getEastNorthOffsetNmiBetween,
+      var _p16 = A2($GeoUtils.getEastNorthOffsetNmiBetween,
       refPoint,
       toWestLongitude(p));
-      var deast = _p9._0;
-      var dnorth = _p9._1;
+      var deast = _p16._0;
+      var dnorth = _p16._1;
       return {x: deast,y: dnorth};
    };
    var toXYPoints = function (coordList) {
@@ -12886,11 +13510,11 @@ Elm.ResourceDecoder.make = function (_elm) {
       _U.list([]))]);
    };
    var getCountValue = function (maybeValue) {
-      var _p10 = maybeValue;
-      if (_p10.ctor === "Nothing") {
+      var _p17 = maybeValue;
+      if (_p17.ctor === "Nothing") {
             return 0;
          } else {
-            return _p10._0;
+            return _p17._0;
          }
    };
    var getMaxCountForResource = function (resourceCount) {
@@ -12901,11 +13525,11 @@ Elm.ResourceDecoder.make = function (_elm) {
       resourceCount.counts)))));
    };
    var getResourceCountsValue = function (maybeResourceCounts) {
-      var _p11 = maybeResourceCounts;
-      if (_p11.ctor === "Nothing") {
+      var _p18 = maybeResourceCounts;
+      if (_p18.ctor === "Nothing") {
             return 0;
          } else {
-            return getMaxCountForResource(_p11._0);
+            return getMaxCountForResource(_p18._0);
          }
    };
    var getMaxCountValueForResource = F2(function (resource,
@@ -12941,11 +13565,11 @@ Elm.ResourceDecoder.make = function (_elm) {
       resources));
    };
    var getBoundValue = function (maybeValue) {
-      var _p12 = maybeValue;
-      if (_p12.ctor === "Nothing") {
+      var _p19 = maybeValue;
+      if (_p19.ctor === "Nothing") {
             return 0;
          } else {
-            return _p12._0;
+            return _p19._0;
          }
    };
    var findXBounds = function (xypoints) {
@@ -12988,6 +13612,9 @@ Elm.ResourceDecoder.make = function (_elm) {
       minY,
       maxY));
    });
+   var toDisplayYF = F3(function (cy,minY,maxY) {
+      return (0 - cy) * A2(getYScaleFactor,minY,maxY);
+   });
    var getXScaleFactor = F2(function (minX,maxX) {
       return getMapDisplayWidth / (2.0 * (maxX - minX));
    });
@@ -13019,12 +13646,12 @@ Elm.ResourceDecoder.make = function (_elm) {
       _U.list([]));
    });
    var toSvgPolygons = function (resources) {
-      var _p13 = getYBounds(resources);
-      var minY = _p13._0;
-      var maxY = _p13._1;
-      var _p14 = getXBounds(resources);
-      var minX = _p14._0;
-      var maxX = _p14._1;
+      var _p20 = getYBounds(resources);
+      var minY = _p20._0;
+      var maxY = _p20._1;
+      var _p21 = getXBounds(resources);
+      var minX = _p21._0;
+      var maxX = _p21._1;
       return A2($List.map,
       function (r) {
          return A5(toSvgPolygon,r,minX,maxX,minY,maxY);
@@ -13058,12 +13685,12 @@ Elm.ResourceDecoder.make = function (_elm) {
    var toSvgPolygonsColoredByCount = F2(function (resources,
    resourceCounts) {
       var xypoints = getAllXYPoints(resources);
-      var _p15 = findXBounds(xypoints);
-      var minX = _p15._0;
-      var maxX = _p15._1;
-      var _p16 = findYBounds(xypoints);
-      var minY = _p16._0;
-      var maxY = _p16._1;
+      var _p22 = findXBounds(xypoints);
+      var minX = _p22._0;
+      var maxX = _p22._1;
+      var _p23 = findYBounds(xypoints);
+      var minY = _p23._0;
+      var maxY = _p23._1;
       return A2($List.map,
       function (r) {
          return A6(toSvgPolygonColoredByCount,
@@ -13077,16 +13704,16 @@ Elm.ResourceDecoder.make = function (_elm) {
       resources);
    });
    var toSvgPolygonsOrNothing = function (model) {
-      var _p17 = model.resources;
-      if (_p17.ctor === "Nothing") {
+      var _p24 = model.resources;
+      if (_p24.ctor === "Nothing") {
             return _U.list([]);
          } else {
-            var _p19 = _p17._0;
-            var _p18 = model.resourceCounts;
-            if (_p18.ctor === "Nothing") {
-                  return toSvgPolygons(_p19);
+            var _p26 = _p24._0;
+            var _p25 = model.resourceCounts;
+            if (_p25.ctor === "Nothing") {
+                  return toSvgPolygons(_p26);
                } else {
-                  return A2(toSvgPolygonsColoredByCount,_p19,_p18._0);
+                  return A2(toSvgPolygonsColoredByCount,_p26,_p25._0);
                }
          }
    };
@@ -13143,15 +13770,15 @@ Elm.ResourceDecoder.make = function (_elm) {
    maxX,
    minY,
    maxY) {
-      var _p20 = maybeTrajectory;
-      if (_p20.ctor === "Nothing") {
+      var _p27 = maybeTrajectory;
+      if (_p27.ctor === "Nothing") {
             return A2($Svg.polyline,
             _U.list([$Svg$Attributes.points("0,0 100,0")
                     ,$Svg$Attributes.stroke("red")
                     ,$Svg$Attributes.fill("none")]),
             _U.list([]));
          } else {
-            var xypoints = trajectoryToXYPoints(_p20._0);
+            var xypoints = trajectoryToXYPoints(_p27._0);
             var pointString = $String.concat(A2($List.map,
             function (p) {
                return A2($Basics._op["++"],
@@ -13168,9 +13795,98 @@ Elm.ResourceDecoder.make = function (_elm) {
             _U.list([]));
          }
    });
+   var toDisplayXF = F3(function (cx,minX,maxX) {
+      return cx * A2(getXScaleFactor,minX,maxX);
+   });
+   var trajectoryToCircles = F5(function (maybeTrajectory,
+   minX,
+   maxX,
+   minY,
+   maxY) {
+      var _p28 = maybeTrajectory;
+      if (_p28.ctor === "Nothing") {
+            return _U.list([A2($Svg.rect,
+            _U.list([$Svg$Attributes.x("20")
+                    ,$Svg$Attributes.y("20")
+                    ,$Svg$Attributes.width("4")
+                    ,$Svg$Attributes.height("4")
+                    ,$Svg$Attributes.style("fill:#FFFFFF;stroke:#222222")]),
+            _U.list([]))]);
+         } else {
+            var xypoints = A2($List.map,
+            function (p) {
+               return toXYPoint(toGeoPoint(p));
+            },
+            _p28._0);
+            return A2($List.map,
+            function (p) {
+               return A2($Svg.rect,
+               _U.list([$Svg$Attributes.x($Basics.toString(A3(toDisplayXF,
+                       p.x,
+                       minX,
+                       maxX) - 2))
+                       ,$Svg$Attributes.y($Basics.toString(A3(toDisplayYF,
+                       p.y,
+                       minY,
+                       maxY) - 2))
+                       ,$Svg$Attributes.width("4")
+                       ,$Svg$Attributes.height("4")
+                       ,$Svg$Attributes.style("fill:#00FF00;stroke:#002200")]),
+               _U.list([]));
+            },
+            xypoints);
+         }
+   });
+   var toStringList = function (maybeResource) {
+      var _p29 = maybeResource;
+      if (_p29.ctor === "Nothing") {
+            return _U.list([]);
+         } else {
+            return A2($List.map,
+            function (c) {
+               return A2($Basics._op["++"],
+               $Basics.toString(c.latDeg),
+               A2($Basics._op["++"],",",$Basics.toString(c.lonDeg)));
+            },
+            _p29._0.coords);
+         }
+   };
+   var getNth = F2(function (n,maybeResources) {
+      var _p30 = maybeResources;
+      if (_p30.ctor === "Nothing") {
+            return $Maybe.Nothing;
+         } else {
+            return $List.head(A2($List.drop,n,_p30._0));
+         }
+   });
+   var toDisplayCount = function (c) {
+      return $Basics.toString($Basics.toFloat(0 - c) / 4.0 * 100.0);
+   };
+   var getTickHeight = function (x) {
+      return _U.eq(A2($Basics._op["%"],x,60),0) ? "4" : "2";
+   };
+   var toTwoDigitString = function (value) {
+      return _U.cmp(value,10) < 0 ? A2($Basics._op["++"],
+      $Basics.toString(0),
+      $Basics.toString(value)) : $Basics.toString(value);
+   };
+   var convertToFloat = function (rawString) {
+      var _p31 = $String.toFloat(rawString);
+      if (_p31.ctor === "Err") {
+            return 0.0;
+         } else {
+            return _p31._0;
+         }
+   };
+   var toLocalTime = F3(function (minTime,
+   maxTime,
+   currentSliderValue) {
+      var value = convertToFloat(currentSliderValue);
+      return $Basics.floor(minTime + value * (maxTime - minTime) / 100.0);
+   });
    var toPolylines = function (model) {
-      var _p21 = model.routes;
-      if (_p21.ctor === "Nothing") {
+      var _p32 = model.routes;
+      if (_p32.ctor === "Nothing") {
             return _U.list([A2($Svg.line,
             _U.list([$Svg$Attributes.x1("-200")
                     ,$Svg$Attributes.x2("0")
@@ -13179,43 +13895,74 @@ Elm.ResourceDecoder.make = function (_elm) {
                     ,$Svg$Attributes.stroke("black")]),
             _U.list([]))]);
          } else {
-            var _p28 = _p21._0;
-            var _p22 = model.resources;
-            if (_p22.ctor === "Nothing") {
-                  var _p23 = {ctor: "_Tuple2",_0: -1000,_1: 1000};
-                  var minY = _p23._0;
-                  var maxY = _p23._1;
-                  var _p24 = {ctor: "_Tuple2",_0: -1000,_1: 1000};
-                  var minX = _p24._0;
-                  var maxX = _p24._1;
+            var _p39 = _p32._0;
+            var _p33 = model.resources;
+            if (_p33.ctor === "Nothing") {
+                  var _p34 = {ctor: "_Tuple2",_0: -1000,_1: 1000};
+                  var minY = _p34._0;
+                  var maxY = _p34._1;
+                  var _p35 = {ctor: "_Tuple2",_0: -1000,_1: 1000};
+                  var minX = _p35._0;
+                  var maxX = _p35._1;
                   return A2($List.map,
                   function (r) {
                      return A5(toPolyline,r,minX,maxX,minY,maxY);
                   },
-                  _p28);
+                  _p39);
                } else {
-                  var _p27 = _p22._0;
-                  var sectorPolygons = toSvgPolygons(_p27);
-                  var _p25 = getYBounds(_p27);
-                  var minY = _p25._0;
-                  var maxY = _p25._1;
-                  var _p26 = getXBounds(_p27);
-                  var minX = _p26._0;
-                  var maxX = _p26._1;
+                  var _p38 = _p33._0;
+                  var currentTime = A3(toLocalTime,
+                  model.minTimestamp,
+                  model.maxTimestamp,
+                  model.currentSlider);
+                  var currentPosn = A2(interpolatePosn,
+                  model.trajectory,
+                  currentTime);
+                  var currentXY = toXYPoint(toGeoPoint(currentPosn));
+                  var sectorPolygons = toSvgPolygons(_p38);
+                  var _p36 = getYBounds(_p38);
+                  var minY = _p36._0;
+                  var maxY = _p36._1;
+                  var displayY = $Basics.toString(A3(toDisplayYF,
+                  currentXY.y,
+                  minY,
+                  maxY) - 2);
+                  var _p37 = getXBounds(_p38);
+                  var minX = _p37._0;
+                  var maxX = _p37._1;
                   var routeLines = A2($List.map,
                   function (r) {
                      return A5(toPolyline,r,minX,maxX,minY,maxY);
                   },
-                  _p28);
+                  _p39);
                   var trajectoryLine = A5(trajectoryToPolyline,
                   model.trajectory,
                   minX,
                   maxX,
                   minY,
                   maxY);
+                  var trajectoryWaypoints = A5(trajectoryToCircles,
+                  model.trajectory,
+                  minX,
+                  maxX,
+                  minY,
+                  maxY);
+                  var displayX = $Basics.toString(A3(toDisplayXF,
+                  currentXY.x,
+                  minX,
+                  maxX) - 2);
+                  var posnIcon = A2($Svg.rect,
+                  _U.list([$Svg$Attributes.x(displayX)
+                          ,$Svg$Attributes.y(displayY)
+                          ,$Svg$Attributes.width("4")
+                          ,$Svg$Attributes.height("4")
+                          ,$Svg$Attributes.style("fill:#0000FF;stroke:#0000FF")]),
+                  _U.list([]));
                   return A2($List.append,
                   A2($List.append,routeLines,sectorPolygons),
-                  _U.list([trajectoryLine]));
+                  A2($List.append,
+                  _U.list([trajectoryLine,posnIcon]),
+                  trajectoryWaypoints));
                }
          }
    };
@@ -13250,46 +13997,37 @@ Elm.ResourceDecoder.make = function (_elm) {
       _U.list([])),
       toPolylines(model)))]));
    };
-   var toStringList = function (maybeResource) {
-      var _p29 = maybeResource;
-      if (_p29.ctor === "Nothing") {
-            return _U.list([]);
-         } else {
-            return A2($List.map,
-            function (c) {
-               return A2($Basics._op["++"],
-               $Basics.toString(c.latDeg),
-               A2($Basics._op["++"],",",$Basics.toString(c.lonDeg)));
-            },
-            _p29._0.coords);
-         }
-   };
-   var getNth = F2(function (n,maybeResources) {
-      var _p30 = maybeResources;
-      if (_p30.ctor === "Nothing") {
-            return $Maybe.Nothing;
-         } else {
-            return $List.head(A2($List.drop,n,_p30._0));
-         }
+   var toDateTimeString = F3(function (minTime,
+   maxTime,
+   currentValue) {
+      var value = convertToFloat(currentValue);
+      var localTime = minTime + value * (maxTime - minTime) / 100.0;
+      var gmtTime = localTime + 6 * 60 * 60 * 1000;
+      var date$ = $Date.fromTime(gmtTime);
+      var hour$ = toTwoDigitString($Date.hour(date$));
+      var minute$ = toTwoDigitString($Date.minute(date$));
+      var second$ = toTwoDigitString($Date.second(date$));
+      var year$ = $Basics.toString($Date.year(date$));
+      return A2($Basics._op["++"],
+      hour$,
+      A2($Basics._op["++"],
+      ":",
+      A2($Basics._op["++"],
+      minute$,
+      A2($Basics._op["++"],":",second$))));
    });
-   var toDisplayCount = function (c) {
-      return $Basics.toString($Basics.toFloat(0 - c) / 4.0 * 100.0);
-   };
-   var getTickHeight = function (x) {
-      return _U.eq(A2($Basics._op["%"],x,60),0) ? "4" : "2";
-   };
    var interleave = F2(function (list1,list2) {
-      var _p31 = list1;
-      if (_p31.ctor === "[]") {
+      var _p40 = list1;
+      if (_p40.ctor === "[]") {
             return list2;
          } else {
-            var _p32 = list2;
-            if (_p32.ctor === "[]") {
+            var _p41 = list2;
+            if (_p41.ctor === "[]") {
                   return list1;
                } else {
                   return A2($List._op["::"],
-                  _p32._0,
-                  A2($List._op["::"],_p31._0,A2(interleave,_p31._1,_p32._1)));
+                  _p41._0,
+                  A2($List._op["::"],_p40._0,A2(interleave,_p40._1,_p41._1)));
                }
          }
    });
@@ -13307,20 +14045,84 @@ Elm.ResourceDecoder.make = function (_elm) {
       steps(resourceCount.counts),
       resourceCount.counts);
    };
+   var getLastTimestamp = function (trajectory) {
+      var reversed = $List.reverse(trajectory);
+      var _p42 = $List.head(reversed);
+      if (_p42.ctor === "Nothing") {
+            return 6 * 60 * 60 * 1000;
+         } else {
+            return $Basics.toFloat(_p42._0.timestamp);
+         }
+   };
+   var getMaxTimestamp = function (maybeTrajectory) {
+      var _p43 = maybeTrajectory;
+      if (_p43.ctor === "Nothing") {
+            return 6 * 60 * 60 * 1000;
+         } else {
+            return getLastTimestamp(_p43._0);
+         }
+   };
+   var getFirstTimestamp = function (trajectory) {
+      var _p44 = $List.head(trajectory);
+      if (_p44.ctor === "Nothing") {
+            return 0;
+         } else {
+            return $Basics.toFloat(_p44._0.timestamp);
+         }
+   };
+   var getMinTimestamp = function (maybeTrajectory) {
+      var _p45 = maybeTrajectory;
+      if (_p45.ctor === "Nothing") {
+            return 0;
+         } else {
+            return getFirstTimestamp(_p45._0);
+         }
+   };
    var init = {ctor: "_Tuple2"
               ,_0: {resources: $Maybe.Nothing
                    ,resourceCounts: $Maybe.Nothing
                    ,routes: $Maybe.Nothing
                    ,trajectory: $Maybe.Nothing
-                   ,currentTime: 0}
+                   ,crossingTimeSummary: $Maybe.Nothing
+                   ,currentTime: 0
+                   ,currentSlider: "0"
+                   ,minTimestamp: 0
+                   ,maxTimestamp: 6 * 60 * 60 * 1000
+                   ,currentTimestamp: 0}
               ,_1: $Effects.none};
-   var Model = F5(function (a,b,c,d,e) {
-      return {resources: a
-             ,resourceCounts: b
-             ,routes: c
-             ,trajectory: d
-             ,currentTime: e};
-   });
+   var Model = function (a) {
+      return function (b) {
+         return function (c) {
+            return function (d) {
+               return function (e) {
+                  return function (f) {
+                     return function (g) {
+                        return function (h) {
+                           return function (i) {
+                              return function (j) {
+                                 return {resources: a
+                                        ,resourceCounts: b
+                                        ,routes: c
+                                        ,trajectory: d
+                                        ,crossingTimeSummary: e
+                                        ,currentTime: f
+                                        ,currentSlider: g
+                                        ,minTimestamp: h
+                                        ,maxTimestamp: i
+                                        ,currentTimestamp: j};
+                              };
+                           };
+                        };
+                     };
+                  };
+               };
+            };
+         };
+      };
+   };
+   var ShowCrossingTimeSummary = function (a) {
+      return {ctor: "ShowCrossingTimeSummary",_0: a};
+   };
    var ShowTrajectory = function (a) {
       return {ctor: "ShowTrajectory",_0: a};
    };
@@ -13343,6 +14145,10 @@ Elm.ResourceDecoder.make = function (_elm) {
    };
    var GetRoutes = {ctor: "GetRoutes"};
    var GetTrajectory = {ctor: "GetTrajectory"};
+   var GetCrossingTimeSummary = {ctor: "GetCrossingTimeSummary"};
+   var UpdateCurrentTime = function (a) {
+      return {ctor: "UpdateCurrentTime",_0: a};
+   };
    var NoOp = {ctor: "NoOp"};
    var getDisplayTimeOrigin = 200;
    var createLabelForResourceCount = function (resourceCount) {
@@ -13408,8 +14214,8 @@ Elm.ResourceDecoder.make = function (_elm) {
       stairsData));
    });
    var createSparkLineForResource = function (maybeResourceCount) {
-      var _p33 = maybeResourceCount;
-      if (_p33.ctor === "Nothing") {
+      var _p46 = maybeResourceCount;
+      if (_p46.ctor === "Nothing") {
             return A2($Svg.line,
             _U.list([$Svg$Attributes.x1("-200")
                     ,$Svg$Attributes.x2("0")
@@ -13419,7 +14225,7 @@ Elm.ResourceDecoder.make = function (_elm) {
             _U.list([]));
          } else {
             return A2($Svg.polyline,
-            _U.list([$Svg$Attributes.points(A2(toXYPointString,_p33._0,0))
+            _U.list([$Svg$Attributes.points(A2(toXYPointString,_p46._0,0))
                     ,$Svg$Attributes.stroke("blue")
                     ,$Svg$Attributes.fill("none")]),
             _U.list([]));
@@ -13454,18 +14260,24 @@ Elm.ResourceDecoder.make = function (_elm) {
       createTicks))]));
    });
    var toSvgs = F2(function (maybeResourceCounts,refTime) {
-      var _p34 = maybeResourceCounts;
-      if (_p34.ctor === "Nothing") {
+      var _p47 = maybeResourceCounts;
+      if (_p47.ctor === "Nothing") {
             return _U.list([]);
          } else {
             return A2($List.map,
             function (r) {
                return A2(createCountSvg,r,refTime);
             },
-            _p34._0);
+            _p47._0);
          }
    });
    var view = F2(function (address,model) {
+      var evth = A3($Html$Events.on,
+      "input",
+      $Html$Events.targetValue,
+      function (v) {
+         return A2($Signal.message,address,UpdateCurrentTime(v));
+      });
       return A2($Html.div,
       _U.list([]),
       A2($List.append,
@@ -13481,12 +14293,18 @@ Elm.ResourceDecoder.make = function (_elm) {
               ,A2($Html.button,
               _U.list([A2($Html$Events.onClick,address,GetTrajectory)]),
               _U.list([$Html.text("Click for trajectory!")]))
+              ,A2($Html.button,
+              _U.list([A2($Html$Events.onClick,
+              address,
+              GetCrossingTimeSummary)]),
+              _U.list([$Html.text("Click for crossing time summary!")]))
               ,A2($Html.br,_U.list([]),_U.list([]))
               ,displayResources(model)
               ,displayRoutes(model)
               ,viewResourceCounts(model.resourceCounts)
               ,viewRoutes(model.routes)
               ,viewTrajectory(model.trajectory)
+              ,viewCrossingTimeSummary(model.crossingTimeSummary)
               ,A2($Html.button,
               _U.list([A2($Html$Events.onClick,
               address,
@@ -13499,11 +14317,31 @@ Elm.ResourceDecoder.make = function (_elm) {
               _U.list([$Html.text("-15")]))
               ,$Html.text(A2($Basics._op["++"],
               "current Time: ",
-              $Basics.toString(model.currentTime)))]),
+              $Basics.toString(model.currentTime)))
+              ,A2($Html.input,
+              _U.list([$Html$Attributes.type$("range")
+                      ,$Html$Attributes.min("0")
+                      ,$Html$Attributes.max("100")
+                      ,$Html$Attributes.value(model.currentSlider)
+                      ,evth]),
+              _U.list([]))
+              ,A2($Html.input,
+              _U.list([$Html$Attributes.type$("text")
+                      ,$Html$Attributes.value(A3(toDateTimeString,
+                      model.minTimestamp,
+                      model.maxTimestamp,
+                      model.currentSlider))]),
+              _U.list([]))]),
       A2($List.intersperse,
       A2($Html.br,_U.list([]),_U.list([])),
       A2(toSvgs,model.resourceCounts,model.currentTime))));
    });
+   var crossingTimeUrl = "./crossingTimeSummary1.json";
+   var getCrossingTimeSummary = $Effects.task(A2($Task.map,
+   ShowCrossingTimeSummary,
+   toMaybeWithLogging(A2($Http.get,
+   crossingTimeSummaryDecoder,
+   crossingTimeUrl))));
    var trajectoryUrl = "./trajectory1.json";
    var getTrajectory = $Effects.task(A2($Task.map,
    ShowTrajectory,
@@ -13527,11 +14365,14 @@ Elm.ResourceDecoder.make = function (_elm) {
    ShowResources,
    toMaybeWithLogging(A2($Http.get,decoderColl,resourcesUrl))));
    var update = F2(function (action,model) {
-      var _p35 = action;
-      switch (_p35.ctor)
+      var _p48 = action;
+      switch (_p48.ctor)
       {case "NoOp": return {ctor: "_Tuple2"
                            ,_0: model
                            ,_1: $Effects.none};
+         case "GetCrossingTimeSummary": return {ctor: "_Tuple2"
+                                               ,_0: _U.update(model,{crossingTimeSummary: $Maybe.Nothing})
+                                               ,_1: getCrossingTimeSummary};
          case "GetTrajectory": return {ctor: "_Tuple2"
                                       ,_0: _U.update(model,{trajectory: $Maybe.Nothing})
                                       ,_1: getTrajectory};
@@ -13545,22 +14386,32 @@ Elm.ResourceDecoder.make = function (_elm) {
                                           ,_0: _U.update(model,{resourceCounts: $Maybe.Nothing})
                                           ,_1: getResourceCounts};
          case "ShowResources": return {ctor: "_Tuple2"
-                                      ,_0: _U.update(model,{resources: _p35._0})
+                                      ,_0: _U.update(model,{resources: _p48._0})
                                       ,_1: $Effects.none};
          case "ShowResourceCounts": return {ctor: "_Tuple2"
-                                           ,_0: _U.update(model,{resourceCounts: _p35._0})
+                                           ,_0: _U.update(model,{resourceCounts: _p48._0})
                                            ,_1: $Effects.none};
          case "ShowRoutes": return {ctor: "_Tuple2"
-                                   ,_0: _U.update(model,{routes: _p35._0})
+                                   ,_0: _U.update(model,{routes: _p48._0})
                                    ,_1: $Effects.none};
-         case "ShowTrajectory": return {ctor: "_Tuple2"
-                                       ,_0: _U.update(model,{trajectory: _p35._0})
-                                       ,_1: $Effects.none};
+         case "ShowTrajectory": var _p49 = _p48._0;
+           return {ctor: "_Tuple2"
+                  ,_0: _U.update(model,
+                  {trajectory: _p49
+                  ,minTimestamp: getMinTimestamp(_p49)
+                  ,maxTimestamp: getMaxTimestamp(_p49)})
+                  ,_1: $Effects.none};
+         case "ShowCrossingTimeSummary": return {ctor: "_Tuple2"
+                                                ,_0: _U.update(model,{crossingTimeSummary: _p48._0})
+                                                ,_1: $Effects.none};
          case "ShiftTimeForward": return {ctor: "_Tuple2"
-                                         ,_0: _U.update(model,{currentTime: _p35._0})
+                                         ,_0: _U.update(model,{currentTime: _p48._0})
                                          ,_1: $Effects.none};
+         case "ShiftTimeBackward": return {ctor: "_Tuple2"
+                                          ,_0: _U.update(model,{currentTime: _p48._0})
+                                          ,_1: $Effects.none};
          default: return {ctor: "_Tuple2"
-                         ,_0: _U.update(model,{currentTime: _p35._0})
+                         ,_0: _U.update(model,{currentSlider: _p48._0})
                          ,_1: $Effects.none};}
    });
    var app = $StartApp.start({init: init
@@ -13575,11 +14426,14 @@ Elm.ResourceDecoder.make = function (_elm) {
                                         ,resourceCountsUrl: resourceCountsUrl
                                         ,routesUrl: routesUrl
                                         ,trajectoryUrl: trajectoryUrl
+                                        ,crossingTimeUrl: crossingTimeUrl
                                         ,getTimeOrigin: getTimeOrigin
                                         ,getDisplayTimeOrigin: getDisplayTimeOrigin
                                         ,app: app
                                         ,main: main
                                         ,NoOp: NoOp
+                                        ,UpdateCurrentTime: UpdateCurrentTime
+                                        ,GetCrossingTimeSummary: GetCrossingTimeSummary
                                         ,GetTrajectory: GetTrajectory
                                         ,GetRoutes: GetRoutes
                                         ,ShiftTimeForward: ShiftTimeForward
@@ -13590,8 +14444,13 @@ Elm.ResourceDecoder.make = function (_elm) {
                                         ,ShowResourceCounts: ShowResourceCounts
                                         ,ShowRoutes: ShowRoutes
                                         ,ShowTrajectory: ShowTrajectory
+                                        ,ShowCrossingTimeSummary: ShowCrossingTimeSummary
                                         ,Model: Model
                                         ,init: init
+                                        ,getFirstTimestamp: getFirstTimestamp
+                                        ,getMinTimestamp: getMinTimestamp
+                                        ,getMaxTimestamp: getMaxTimestamp
+                                        ,getLastTimestamp: getLastTimestamp
                                         ,update: update
                                         ,createLabelForResourceCount: createLabelForResourceCount
                                         ,createBorder: createBorder
@@ -13602,6 +14461,10 @@ Elm.ResourceDecoder.make = function (_elm) {
                                         ,interleave: interleave
                                         ,toSvgs: toSvgs
                                         ,view: view
+                                        ,convertToFloat: convertToFloat
+                                        ,toTwoDigitString: toTwoDigitString
+                                        ,toLocalTime: toLocalTime
+                                        ,toDateTimeString: toDateTimeString
                                         ,getTickHeight: getTickHeight
                                         ,createTicks: createTicks
                                         ,createTickLabels: createTickLabels
@@ -13617,6 +14480,8 @@ Elm.ResourceDecoder.make = function (_elm) {
                                         ,getYScaleFactor: getYScaleFactor
                                         ,toDisplayX: toDisplayX
                                         ,toDisplayY: toDisplayY
+                                        ,toDisplayXF: toDisplayXF
+                                        ,toDisplayYF: toDisplayYF
                                         ,toPointString: toPointString
                                         ,toSvgPolygon: toSvgPolygon
                                         ,toSvgPolygonColoredByCount: toSvgPolygonColoredByCount
@@ -13652,11 +14517,16 @@ Elm.ResourceDecoder.make = function (_elm) {
                                         ,getMaxRouteY: getMaxRouteY
                                         ,getMinRouteY: getMinRouteY
                                         ,toPolylines: toPolylines
+                                        ,getPointBefore: getPointBefore
+                                        ,getPointAfter: getPointAfter
+                                        ,interpolatePosn: interpolatePosn
+                                        ,trajectoryToCircles: trajectoryToCircles
                                         ,trajectoryToPolyline: trajectoryToPolyline
                                         ,trajectoryToXYPoints: trajectoryToXYPoints
                                         ,toGeoPoint: toGeoPoint
                                         ,displayRoutes: displayRoutes
                                         ,displayResources: displayResources
+                                        ,viewCrossingTimeSummary: viewCrossingTimeSummary
                                         ,viewTrajectory: viewTrajectory
                                         ,viewCoords: viewCoords
                                         ,viewRoutes: viewRoutes
@@ -13665,6 +14535,7 @@ Elm.ResourceDecoder.make = function (_elm) {
                                         ,getRoutes: getRoutes
                                         ,getResourceCounts: getResourceCounts
                                         ,getTrajectory: getTrajectory
+                                        ,getCrossingTimeSummary: getCrossingTimeSummary
                                         ,getResources: getResources
                                         ,toMaybeWithLogging: toMaybeWithLogging
                                         ,Coord: Coord
@@ -13683,5 +14554,8 @@ Elm.ResourceDecoder.make = function (_elm) {
                                         ,geoPointDecoder: geoPointDecoder
                                         ,TrajectoryPoint: TrajectoryPoint
                                         ,trajectoryDecoder: trajectoryDecoder
-                                        ,trajectoryPointDecoder: trajectoryPointDecoder};
+                                        ,trajectoryPointDecoder: trajectoryPointDecoder
+                                        ,CrossingTime: CrossingTime
+                                        ,crossingTimeSummaryDecoder: crossingTimeSummaryDecoder
+                                        ,crossingTimeDecoder: crossingTimeDecoder};
 };
