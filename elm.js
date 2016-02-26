@@ -13366,10 +13366,13 @@ Elm.ResourceDecoder.make = function (_elm) {
                         var lat$ = _p9.latDeg + dlat / $Basics.toFloat(dt) * $Basics.toFloat(dt$);
                         var lon$ = _p9.lonDeg + dlon / $Basics.toFloat(dt) * $Basics.toFloat(dt$);
                         var alt$ = _p9.altFeet + daltFeet / $Basics.toFloat(dt) * $Basics.toFloat(dt$);
-                        return {timestamp: currentTime
-                               ,latDeg: lat$
-                               ,lonDeg: lon$
-                               ,altFeet: alt$};
+                        return !_U.eq(dt,0) ? {timestamp: currentTime
+                                              ,latDeg: lat$
+                                              ,lonDeg: lon$
+                                              ,altFeet: alt$} : {timestamp: _p9.timestamp
+                                                                ,latDeg: _p9.latDeg
+                                                                ,lonDeg: _p9.lonDeg
+                                                                ,altFeet: _p9.altFeet};
                      }
                }
          }

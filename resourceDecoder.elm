@@ -705,11 +705,19 @@ interpolatePosn maybeTrajectory currentTime =
                   lon' = trajectoryPoint.lonDeg + dlon/(toFloat dt)*(toFloat dt')
                   alt' = trajectoryPoint.altFeet + daltFeet/(toFloat dt)*(toFloat dt')
                 in
-                  { timestamp = currentTime
-                  , latDeg = lat'
-                  , lonDeg = lon'
-                  , altFeet = alt'
-                  }
+                  if (dt /= 0) then
+                    { timestamp = currentTime
+                    , latDeg = lat'
+                    , lonDeg = lon'
+                    , altFeet = alt'
+                    }
+                  else 
+                    { timestamp = trajectoryPoint.timestamp
+                    , latDeg = trajectoryPoint.latDeg
+                    , lonDeg = trajectoryPoint.lonDeg
+                    , altFeet = trajectoryPoint.altFeet
+                    }
+ 
 
 
 trajectoryToCircles maybeTrajectory minX maxX minY maxY = 
