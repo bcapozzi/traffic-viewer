@@ -13137,14 +13137,15 @@ Elm.ResourceDecoder.make = function (_elm) {
    A2($Json$Decode._op[":="],
    "crossingTimeSummary",
    $Json$Decode.list(crossingTimeDecoder)));
-   var TrajectoryPoint = F3(function (a,b,c) {
-      return {timestamp: a,latDeg: b,lonDeg: c};
+   var TrajectoryPoint = F4(function (a,b,c,d) {
+      return {timestamp: a,latDeg: b,lonDeg: c,altFeet: d};
    });
-   var trajectoryPointDecoder = A4($Json$Decode.object3,
+   var trajectoryPointDecoder = A5($Json$Decode.object4,
    TrajectoryPoint,
    A2($Json$Decode._op[":="],"timestamp",$Json$Decode.$int),
    A2($Json$Decode._op[":="],"latDeg",$Json$Decode.$float),
-   A2($Json$Decode._op[":="],"lonDeg",$Json$Decode.$float));
+   A2($Json$Decode._op[":="],"lonDeg",$Json$Decode.$float),
+   A2($Json$Decode._op[":="],"altFeet",$Json$Decode.$float));
    var trajectoryDecoder = A2($Json$Decode.object1,
    $Basics.identity,
    A2($Json$Decode._op[":="],
@@ -13332,7 +13333,7 @@ Elm.ResourceDecoder.make = function (_elm) {
    currentTime) {
       var _p5 = maybeTrajectory;
       if (_p5.ctor === "Nothing") {
-            return {timestamp: 0,latDeg: 0.0,lonDeg: 0.0};
+            return {timestamp: 0,latDeg: 0.0,lonDeg: 0.0,altFeet: 0.0};
          } else {
             var _p10 = _p5._0;
             var laterPoints = A2($List.filter,
@@ -13349,21 +13350,26 @@ Elm.ResourceDecoder.make = function (_elm) {
             var prevPoint = A2(getPointBefore,earlierPoints,_p10);
             var _p6 = prevPoint;
             if (_p6.ctor === "Nothing") {
-                  return {timestamp: 0,latDeg: 0.0,lonDeg: 0.0};
+                  return {timestamp: 0,latDeg: 0.0,lonDeg: 0.0,altFeet: 0.0};
                } else {
                   var _p9 = _p6._0;
                   var _p7 = nextPoint;
                   if (_p7.ctor === "Nothing") {
-                        return {timestamp: 0,latDeg: 0.0,lonDeg: 0.0};
+                        return {timestamp: 0,latDeg: 0.0,lonDeg: 0.0,altFeet: 0.0};
                      } else {
                         var _p8 = _p7._0;
+                        var daltFeet = _p8.altFeet - _p9.altFeet;
                         var dlon = _p8.lonDeg - _p9.lonDeg;
                         var dlat = _p8.latDeg - _p9.latDeg;
                         var dt = _p8.timestamp - _p9.timestamp;
                         var dt$ = currentTime - _p9.timestamp;
                         var lat$ = _p9.latDeg + dlat / $Basics.toFloat(dt) * $Basics.toFloat(dt$);
                         var lon$ = _p9.lonDeg + dlon / $Basics.toFloat(dt) * $Basics.toFloat(dt$);
-                        return {timestamp: currentTime,latDeg: lat$,lonDeg: lon$};
+                        var alt$ = _p9.altFeet + daltFeet / $Basics.toFloat(dt) * $Basics.toFloat(dt$);
+                        return {timestamp: currentTime
+                               ,latDeg: lat$
+                               ,lonDeg: lon$
+                               ,altFeet: alt$};
                      }
                }
          }
@@ -14025,10 +14031,15 @@ Elm.ResourceDecoder.make = function (_elm) {
                           ,$Svg$Attributes.height("4")
                           ,$Svg$Attributes.style("fill:#0000FF;stroke:#0000FF")]),
                   _U.list([]));
+                  var dataTag = A2($Svg.text$,
+                  _U.list([$Svg$Attributes.x(displayX)
+                          ,$Svg$Attributes.y(displayY)
+                          ,$Svg$Attributes.style("stroke:#0000FF")]),
+                  _U.list([$Html.text($Basics.toString($Basics.floor(currentPosn.altFeet)))]));
                   return A2($List.append,
                   A2($List.append,routeLines,sectorPolygons),
                   A2($List.append,
-                  _U.list([trajectoryLine,posnIcon]),
+                  _U.list([trajectoryLine,posnIcon,dataTag]),
                   trajectoryWaypoints));
                }
          }

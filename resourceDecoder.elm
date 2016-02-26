@@ -647,8 +647,9 @@ toPolylines model =
             displayX = toString ((toDisplayXF currentXY.x minX maxX)-2)
             displayY = toString ((toDisplayYF currentXY.y minY maxY)-2)
             posnIcon = Svg.rect [x displayX, y displayY, SA.width "4", SA.height "4", SA.style "fill:#0000FF;stroke:#0000FF"][]
+            dataTag = Svg.text' [x displayX, y displayY, SA.style "stroke:#0000FF"][text (toString (floor currentPosn.altFeet))]
           in
-            List.append  (List.append routeLines sectorPolygons)(List.append [trajectoryLine, posnIcon] trajectoryWaypoints)
+            List.append  (List.append routeLines sectorPolygons)(List.append [trajectoryLine, posnIcon, dataTag] trajectoryWaypoints)
 
 getPointBefore earlierPoints trajectory = 
   if (List.isEmpty earlierPoints) then
@@ -669,6 +670,7 @@ interpolatePosn maybeTrajectory currentTime =
       { timestamp = 0
       , latDeg = 0.0
       , lonDeg = 0.0
+      , altFeet = 0.0
       }
     Just trajectory ->
       let 
@@ -682,6 +684,7 @@ interpolatePosn maybeTrajectory currentTime =
            { timestamp = 0
            , latDeg = 0.0
            , lonDeg = 0.0
+           , altFeet = 0.0
            }
           Just trajectoryPoint ->
             case nextPoint of 
@@ -689,6 +692,7 @@ interpolatePosn maybeTrajectory currentTime =
                { timestamp = 0
                , latDeg = 0.0
                , lonDeg = 0.0
+               , altFeet = 0.0
                }
               Just anotherTrajectoryPoint ->
                 let
@@ -696,12 +700,15 @@ interpolatePosn maybeTrajectory currentTime =
                   dt = anotherTrajectoryPoint.timestamp - trajectoryPoint.timestamp
                   dlat = anotherTrajectoryPoint.latDeg - trajectoryPoint.latDeg
                   dlon = anotherTrajectoryPoint.lonDeg - trajectoryPoint.lonDeg
+                  daltFeet = anotherTrajectoryPoint.altFeet - trajectoryPoint.altFeet
                   lat' = trajectoryPoint.latDeg + dlat/(toFloat dt)*(toFloat dt')
                   lon' = trajectoryPoint.lonDeg + dlon/(toFloat dt)*(toFloat dt')
+                  alt' = trajectoryPoint.altFeet + daltFeet/(toFloat dt)*(toFloat dt')
                 in
                   { timestamp = currentTime
                   , latDeg = lat'
                   , lonDeg = lon'
+                  , altFeet = alt'
                   }
 
 
@@ -937,6 +944,7 @@ type alias TrajectoryPoint = {
    timestamp: Int
   ,latDeg: Float
   ,lonDeg: Float
+  ,altFeet: Float
 }
 
 trajectoryDecoder : Decoder Trajectory
@@ -946,10 +954,11 @@ trajectoryDecoder =
 
 trajectoryPointDecoder : Decoder TrajectoryPoint
 trajectoryPointDecoder = 
-  Decode.object3 TrajectoryPoint
+  Decode.object4 TrajectoryPoint
     ("timestamp" := Decode.int)
     ("latDeg" := Decode.float)
     ("lonDeg" := Decode.float)
+    ("altFeet" := Decode.float)
 
 type alias CrossingTimeSummary = List CrossingTime
 
